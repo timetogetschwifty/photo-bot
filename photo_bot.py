@@ -29,7 +29,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
-STRIPE_PROVIDER_TOKEN = os.environ["STRIPE_PROVIDER_TOKEN"]
+YOOMONEY_PROVIDER_TOKEN = os.environ["YOOMONEY_PROVIDER_TOKEN"]
 GEMINI_MODEL = "gemini-3-pro-image-preview"
 
 # Price per transformation in smallest currency units (cents for USD)
@@ -131,7 +131,7 @@ async def handle_photo(
         payload=f"transform_{choice}_{update.effective_user.id}",
         currency=TRANSFORM_CURRENCY,
         prices=[LabeledPrice("Transformation", TRANSFORM_PRICE)],
-        provider_token=STRIPE_PROVIDER_TOKEN,
+        provider_token=YOOMONEY_PROVIDER_TOKEN,
     )
     return WAITING_PAYMENT
 
