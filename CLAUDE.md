@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code when working with the Photo Bot project.
 
+## TODO: Pending Tasks
+
+**Payment Integration (not yet working):**
+- YooMoney shop (ShopID 1205878) connected to bot via BotFather
+- Need to get the **provider token** from BotFather after shop connection
+- Update `YOOMONEY_PROVIDER_TOKEN` in `.env` with the new token (format: `381764678:TEST:...`)
+- Restart bot and test payment flow
+
 ## Project Overview
 
 A Telegram bot that applies AI-powered photo transformations using Google Gemini, with a credit-based payment system via YooMoney.
