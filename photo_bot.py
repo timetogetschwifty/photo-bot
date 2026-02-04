@@ -1,3 +1,10 @@
+"""
+Photo Bot — AI Photo Transformations with Credit System
+
+A Telegram bot that applies AI-powered photo transformations using Google Gemini.
+Features: credit system, promo codes, referrals, package purchases via YooMoney.
+"""
+
 import os
 import io
 import logging
@@ -23,6 +30,8 @@ from telegram.ext import (
     ContextTypes,
 )
 
+import database as db
+
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -30,11 +39,10 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 YOOMONEY_PROVIDER_TOKEN = os.environ["YOOMONEY_PROVIDER_TOKEN"]
-GEMINI_MODEL = "gemini-3-pro-image-preview"
+ADMIN_ID = int(os.environ.get("ADMIN_ID", 0))
+BOT_USERNAME = os.environ.get("BOT_USERNAME", "your_bot")
 
-# Price per transformation in smallest currency units (cents for USD)
-TRANSFORM_PRICE = 100  # $1.00
-TRANSFORM_CURRENCY = "USD"
+GEMINI_MODEL = "gemini-3-pro-image-preview"
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -42,139 +50,292 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ── Transformation menu ───────────────────────────────────────────────────────
+# ── Transformations ──────────────────────────────────────────────────────────
 
 TRANSFORMATIONS = {
+    "love_is": {
+        "label": "💌 Открытка в стиле Love is",
+        "description": "Превращу фото в милую открытку в стиле Love is",
+        "prompt": (
+            "Transform this photo into a Love Is comic style illustration. "
+            "Make it cute and romantic like the famous Love Is comics."
+        ),
+        "category": "trend",
+    },
     "cat_phone": {
-        "label": "🐱 Replace phone with a cat",
+        "label": "🐱 Котик вместо телефона",
+        "description": "Заменю телефон в руках на милого котика",
         "prompt": (
             "Replace any phone or mobile device the person is holding "
             "with a cute cat. Keep everything else the same."
         ),
+        "category": "trend",
     },
-    "big_afro": {
-        "label": "🦱 Big afro haircut",
+    "afro": {
+        "label": "🦱 Афро",
+        "description": "Добавлю пышную афро-причёску",
         "prompt": (
             "Change the person's haircut to a big voluminous afro hairstyle. "
             "Keep the face and everything else the same."
         ),
+        "category": "style",
+    },
+    "mullet": {
+        "label": "🥸 Маллет и усы",
+        "description": "Добавлю причёску маллет и усы",
+        "prompt": (
+            "Give the person a mullet haircut and a mustache. "
+            "Keep everything else the same."
+        ),
+        "category": "style",
     },
 }
 
-# ── Conversation states ───────────────────────────────────────────────────────
+# ── Pricing (RUB, in kopecks for Telegram) ───────────────────────────────────
 
-CHOOSING, WAITING_PHOTO, WAITING_PAYMENT = range(3)
+PACKAGES = {
+    "pkg_5": {"credits": 5, "price": 5900, "label": "5 фото — 59 ₽"},
+    "pkg_10": {"credits": 10, "price": 9900, "label": "10 фото — 99 ₽"},
+    "pkg_25": {"credits": 25, "price": 22900, "label": "25 фото — 229 ₽"},
+    "pkg_50": {"credits": 50, "price": 39900, "label": "50 фото — 399 ₽"},
+    "pkg_100": {"credits": 100, "price": 69900, "label": "100 фото — 699 ₽"},
+}
 
-# ── Gemini client ─────────────────────────────────────────────────────────────
+PROMO_AMOUNTS = [10, 25, 50, 100]
+
+# ── Conversation states ──────────────────────────────────────────────────────
+
+(
+    MAIN_MENU,
+    CHOOSING_CATEGORY,
+    CHOOSING_TREND,
+    CHOOSING_STYLE,
+    WAITING_PHOTO,
+    STORE,
+    WAITING_PAYMENT,
+    PROMO_INPUT,
+    REFERRAL,
+    ADMIN_MENU,
+    ADMIN_STATS,
+    ADMIN_PROMO,
+) = range(12)
+
+# ── Gemini client ────────────────────────────────────────────────────────────
 
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 
-# ── Handlers ──────────────────────────────────────────────────────────────────
+# ── Helper functions ─────────────────────────────────────────────────────────
+
+
+def get_effects_by_category(category: str) -> dict:
+    """Get all effects in a category."""
+    return {k: v for k, v in TRANSFORMATIONS.items() if v.get("category") == category}
+
+
+def main_menu_keyboard() -> InlineKeyboardMarkup:
+    """Build main menu keyboard."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("✨ Создать магию", callback_data="menu_create")],
+        [InlineKeyboardButton("💳 Пополнить запасы", callback_data="menu_store")],
+        [InlineKeyboardButton("🎁 Промокод", callback_data="menu_promo")],
+        [InlineKeyboardButton("👥 Пригласить друга", callback_data="menu_referral")],
+    ])
+
+
+def back_to_main_keyboard() -> InlineKeyboardMarkup:
+    """Keyboard with just 'В начало' button."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🏠 В начало", callback_data="back_to_main")],
+    ])
+
+
+# ── Main Menu ────────────────────────────────────────────────────────────────
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Show the transformation menu."""
-    keyboard = [
-        [InlineKeyboardButton(t["label"], callback_data=key)]
-        for key, t in TRANSFORMATIONS.items()
-    ]
-    await update.message.reply_text(
-        "Welcome! Pick a photo transformation:",
-        reply_markup=InlineKeyboardMarkup(keyboard),
+    """Handle /start command. Check for referral link."""
+    user = update.effective_user
+    args = context.args
+
+    # Parse referral link: /start ref_123456
+    referred_by = None
+    if args and args[0].startswith("ref_"):
+        try:
+            referred_by = int(args[0][4:])
+            if referred_by == user.id:
+                referred_by = None  # Can't refer yourself
+        except ValueError:
+            pass
+
+    # Get or create user
+    db_user, is_new = db.get_or_create_user(
+        telegram_id=user.id,
+        username=user.username,
+        referred_by=referred_by,
     )
-    return CHOOSING
+
+    credits = db_user["credits"]
+    name = user.first_name or "друг"
+
+    await update.message.reply_text(
+        f"Привет, {name}!\n💰 Баланс: {credits} фото",
+        reply_markup=main_menu_keyboard(),
+    )
+    return MAIN_MENU
 
 
-async def choose_transformation(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> int:
-    """Store the chosen transformation and ask for a photo."""
+async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show main menu (from callback)."""
     query = update.callback_query
     await query.answer()
 
-    choice = query.data
-    if choice not in TRANSFORMATIONS:
-        await query.edit_message_text("Unknown option. Use /start to try again.")
-        return ConversationHandler.END
+    user = update.effective_user
+    db_user = db.get_user(user.id)
+    credits = db_user["credits"] if db_user else 0
+    name = user.first_name or "друг"
 
-    context.user_data["transformation"] = choice
-    label = TRANSFORMATIONS[choice]["label"]
     await query.edit_message_text(
-        f"Selected: {label}\n\nNow send me a photo to transform."
+        f"Привет, {name}!\n💰 Баланс: {credits} фото",
+        reply_markup=main_menu_keyboard(),
+    )
+    return MAIN_MENU
+
+
+# ── Create Magic Flow ────────────────────────────────────────────────────────
+
+
+async def show_categories(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show effect categories."""
+    query = update.callback_query
+    await query.answer()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔥 Тренды", callback_data="cat_trend")],
+        [InlineKeyboardButton("💇 Меняем стиль", callback_data="cat_style")],
+        [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
+    ])
+
+    await query.edit_message_text(
+        "Выбери категорию:",
+        reply_markup=keyboard,
+    )
+    return CHOOSING_CATEGORY
+
+
+async def show_trends(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show trend effects."""
+    query = update.callback_query
+    await query.answer()
+
+    effects = get_effects_by_category("trend")
+    buttons = [
+        [InlineKeyboardButton(v["label"], callback_data=f"effect_{k}")]
+        for k, v in effects.items()
+    ]
+    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+
+    await query.edit_message_text(
+        "🔥 Тренды",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+    return CHOOSING_TREND
+
+
+async def show_styles(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show style effects."""
+    query = update.callback_query
+    await query.answer()
+
+    effects = get_effects_by_category("style")
+    buttons = [
+        [InlineKeyboardButton(v["label"], callback_data=f"effect_{k}")]
+        for k, v in effects.items()
+    ]
+    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+
+    await query.edit_message_text(
+        "💇 Меняем стиль",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+    return CHOOSING_STYLE
+
+
+async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """User selected an effect. Check credits and show description."""
+    query = update.callback_query
+    await query.answer()
+
+    effect_id = query.data.replace("effect_", "")
+    if effect_id not in TRANSFORMATIONS:
+        await query.edit_message_text("Неизвестный эффект.", reply_markup=back_to_main_keyboard())
+        return MAIN_MENU
+
+    user = update.effective_user
+    db_user = db.get_user(user.id)
+    credits = db_user["credits"] if db_user else 0
+
+    # Check credits
+    if credits < 1:
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("💳 Пополнить запасы", callback_data="menu_store")],
+            [InlineKeyboardButton("👥 Пригласить друга", callback_data="menu_referral")],
+            [InlineKeyboardButton("🏠 В начало", callback_data="back_to_main")],
+        ])
+        await query.edit_message_text(
+            "❌ У тебя закончились фото",
+            reply_markup=keyboard,
+        )
+        return MAIN_MENU
+
+    # Store selected effect
+    context.user_data["effect_id"] = effect_id
+
+    effect = TRANSFORMATIONS[effect_id]
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("❌ Отмена", callback_data="back_to_main")],
+    ])
+
+    await query.edit_message_text(
+        f"{effect['label']}\n\n{effect['description']}\n\nОтправь мне фото для обработки.",
+        reply_markup=keyboard,
     )
     return WAITING_PHOTO
 
 
-async def handle_photo(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> int:
-    """Receive photo, store it, and send a payment invoice."""
-    choice = context.user_data.get("transformation")
-    if not choice or choice not in TRANSFORMATIONS:
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Receive photo and process it."""
+    effect_id = context.user_data.get("effect_id")
+    if not effect_id or effect_id not in TRANSFORMATIONS:
         await update.message.reply_text(
-            "Something went wrong. Use /start to begin again."
+            "Что-то пошло не так. Используй /start",
+            reply_markup=back_to_main_keyboard(),
         )
-        return ConversationHandler.END
+        return MAIN_MENU
 
-    # Download and store the photo for later processing
+    user = update.effective_user
+
+    # Deduct credit
+    if not db.deduct_credit(user.id):
+        await update.message.reply_text(
+            "❌ У тебя закончились фото",
+            reply_markup=back_to_main_keyboard(),
+        )
+        return MAIN_MENU
+
+    # Download photo
     photo_file = await update.message.photo[-1].get_file()
     photo_bytes = await photo_file.download_as_bytearray()
-    context.user_data["photo_bytes"] = bytes(photo_bytes)
 
-    label = TRANSFORMATIONS[choice]["label"]
-    price_display = f"${TRANSFORM_PRICE / 100:.2f}"
-
-    # Send payment invoice
-    await update.message.reply_invoice(
-        title="Photo Transformation",
-        description=f"{label}\nPrice: {price_display}",
-        payload=f"transform_{choice}_{update.effective_user.id}",
-        currency=TRANSFORM_CURRENCY,
-        prices=[LabeledPrice("Transformation", TRANSFORM_PRICE)],
-        provider_token=YOOMONEY_PROVIDER_TOKEN,
-    )
-    return WAITING_PAYMENT
-
-
-async def pre_checkout(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> None:
-    """Approve the payment (must respond within 10 seconds)."""
-    query = update.pre_checkout_query
-
-    # Verify we still have the photo stored
-    if not context.user_data.get("photo_bytes"):
-        await query.answer(ok=False, error_message="Session expired. Use /start to begin again.")
-        return
-
-    await query.answer(ok=True)
-
-
-async def successful_payment(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> int:
-    """Payment succeeded — now process the photo with Gemini."""
-    choice = context.user_data.get("transformation")
-    photo_bytes = context.user_data.get("photo_bytes")
-
-    if not choice or not photo_bytes:
-        await update.message.reply_text(
-            "Something went wrong. Use /start to begin again."
-        )
-        return ConversationHandler.END
-
-    prompt = TRANSFORMATIONS[choice]["prompt"]
-    status_msg = await update.message.reply_text(
-        "Payment received! Transforming your photo… please wait."
-    )
+    effect = TRANSFORMATIONS[effect_id]
+    status_msg = await update.message.reply_text("⏳ Создаю магию...")
 
     try:
-        input_image = Image.open(io.BytesIO(photo_bytes))
+        input_image = Image.open(io.BytesIO(bytes(photo_bytes)))
 
         # Call Gemini
         response = gemini_client.models.generate_content(
             model=GEMINI_MODEL,
-            contents=[prompt, input_image],
+            contents=[effect["prompt"], input_image],
             config=types.GenerateContentConfig(
                 response_modalities=["Text", "Image"],
             ),
@@ -190,13 +351,33 @@ async def successful_payment(
                 result_text = part.text
 
         if result_image is None:
-            msg = "Gemini did not return an image. Try a different photo or transformation."
+            # Refund credit
+            new_balance = db.refund_credit(user.id)
+            msg = f"❌ Что-то пошло не так\n\nКредит возвращён на баланс."
             if result_text:
-                msg += f"\nModel said: {result_text}"
-            await status_msg.edit_text(msg)
-            return ConversationHandler.END
+                msg += f"\n\nОтвет модели: {result_text[:200]}"
 
-        # Send result back
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Попробовать снова", callback_data=f"effect_{effect_id}")],
+                [InlineKeyboardButton("🏠 В начало", callback_data="back_to_main")],
+            ])
+            await status_msg.edit_text(msg, reply_markup=keyboard)
+            return MAIN_MENU
+
+        # Record generation for statistics
+        db.record_generation(user.id, effect_id)
+
+        # Check if we should credit referrer (first generation)
+        referrer_id = db.mark_referral_credited(user.id)
+        if referrer_id:
+            db.add_credits(referrer_id, 3)
+            logger.info(f"Credited referrer {referrer_id} with 3 credits for user {user.id}")
+
+        # Get updated balance
+        db_user = db.get_user(user.id)
+        remaining = db_user["credits"] if db_user else 0
+
+        # Send result
         output_buffer = io.BytesIO()
         result_image.save(output_buffer, format="PNG")
         output_buffer.seek(0)
@@ -204,66 +385,376 @@ async def successful_payment(
         await status_msg.delete()
         await update.message.reply_photo(
             photo=output_buffer,
-            caption=f"Effect: {TRANSFORMATIONS[choice]['label']}\n\nUse /start for another transformation.",
+            caption=f"✅ {effect['label']}\n💰 Осталось: {remaining} фото",
+            reply_markup=back_to_main_keyboard(),
         )
 
     except Exception as e:
         logger.error("Error during transformation: %s", e, exc_info=True)
+        # Refund credit
+        new_balance = db.refund_credit(user.id)
+
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔄 Попробовать снова", callback_data=f"effect_{effect_id}")],
+            [InlineKeyboardButton("🏠 В начало", callback_data="back_to_main")],
+        ])
         await status_msg.edit_text(
-            f"Sorry, something went wrong.\nError: {str(e)[:200]}\n\nUse /start to try again."
+            f"❌ Что-то пошло не так\n\nКредит возвращён на баланс.\n\nОшибка: {str(e)[:100]}",
+            reply_markup=keyboard,
         )
     finally:
-        # Clean up stored photo
-        context.user_data.pop("photo_bytes", None)
-        context.user_data.pop("transformation", None)
+        context.user_data.pop("effect_id", None)
 
-    return ConversationHandler.END
+    return MAIN_MENU
 
 
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Cancel the conversation."""
-    context.user_data.pop("photo_bytes", None)
-    context.user_data.pop("transformation", None)
-    await update.message.reply_text("Cancelled. Use /start to begin again.")
-    return ConversationHandler.END
-
-
-async def unexpected_message(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> int:
-    """Handle non-photo messages when a photo is expected."""
-    await update.message.reply_text("Please send a photo, or /cancel to abort.")
+async def photo_expected(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle non-photo message when photo is expected."""
+    await update.message.reply_text(
+        "Пожалуйста, отправь фото.",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("❌ Отмена", callback_data="back_to_main")],
+        ]),
+    )
     return WAITING_PHOTO
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Store Flow ───────────────────────────────────────────────────────────────
+
+
+async def show_store(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show package store."""
+    query = update.callback_query
+    await query.answer()
+
+    buttons = [
+        [InlineKeyboardButton(pkg["label"], callback_data=f"buy_{key}")]
+        for key, pkg in PACKAGES.items()
+    ]
+    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+
+    await query.edit_message_text(
+        "Выбери пакет:",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+    return STORE
+
+
+async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Send payment invoice for selected package."""
+    query = update.callback_query
+    await query.answer()
+
+    package_id = query.data.replace("buy_", "")
+    if package_id not in PACKAGES:
+        await query.edit_message_text("Неизвестный пакет.", reply_markup=back_to_main_keyboard())
+        return MAIN_MENU
+
+    package = PACKAGES[package_id]
+    context.user_data["pending_package"] = package_id
+
+    # Delete the menu message
+    await query.delete_message()
+
+    # Send invoice
+    await context.bot.send_invoice(
+        chat_id=update.effective_chat.id,
+        title=f"Пакет {package['credits']} фото",
+        description=f"Пополнение баланса на {package['credits']} фото",
+        payload=f"package_{package_id}_{update.effective_user.id}",
+        currency="RUB",
+        prices=[LabeledPrice(f"{package['credits']} фото", package["price"])],
+        provider_token=YOOMONEY_PROVIDER_TOKEN,
+    )
+    return WAITING_PAYMENT
+
+
+async def pre_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Approve the payment."""
+    query = update.pre_checkout_query
+    await query.answer(ok=True)
+
+
+async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle successful payment."""
+    user = update.effective_user
+    package_id = context.user_data.pop("pending_package", None)
+
+    if package_id and package_id in PACKAGES:
+        package = PACKAGES[package_id]
+        credits = package["credits"]
+        price_rub = package["price"] // 100  # Convert kopecks to rubles
+
+        # Add credits and record purchase
+        new_balance = db.add_credits(user.id, credits)
+        db.record_purchase(user.id, credits, price_rub)
+
+        await update.message.reply_text(
+            f"✅ Оплата прошла!\n+{credits} фото добавлено\n\n💰 Баланс: {new_balance} фото",
+            reply_markup=back_to_main_keyboard(),
+        )
+    else:
+        await update.message.reply_text(
+            "Оплата получена, но произошла ошибка. Свяжитесь с поддержкой.",
+            reply_markup=back_to_main_keyboard(),
+        )
+
+    return MAIN_MENU
+
+
+# ── Promo Code Flow ──────────────────────────────────────────────────────────
+
+
+async def show_promo_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Ask for promo code."""
+    query = update.callback_query
+    await query.answer()
+
+    await query.edit_message_text(
+        "Введи промокод:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
+        ]),
+    )
+    return PROMO_INPUT
+
+
+async def handle_promo_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle promo code input."""
+    user = update.effective_user
+    code = update.message.text.strip()
+
+    success, message, credits = db.redeem_promo_code(user.id, code)
+
+    if success:
+        db_user = db.get_user(user.id)
+        new_balance = db_user["credits"] if db_user else 0
+        await update.message.reply_text(
+            f"✅ Промокод активирован!\n+{credits} фото добавлено\n\n💰 Баланс: {new_balance} фото",
+            reply_markup=back_to_main_keyboard(),
+        )
+    else:
+        await update.message.reply_text(
+            f"❌ {message}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Попробовать другой", callback_data="menu_promo")],
+                [InlineKeyboardButton("🏠 В начало", callback_data="back_to_main")],
+            ]),
+        )
+
+    return MAIN_MENU
+
+
+# ── Referral Flow ────────────────────────────────────────────────────────────
+
+
+async def show_referral(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show referral info and link."""
+    query = update.callback_query
+    await query.answer()
+
+    user = update.effective_user
+    ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
+
+    # TODO: Telegram share button requires inline mode, showing link as text for now
+    await query.edit_message_text(
+        f"Приглашай друзей и получай\n+3 фото за каждого!\n\nТвоя ссылка:\n{ref_link}",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
+        ]),
+    )
+    return REFERRAL
+
+
+# ── Admin Menu ───────────────────────────────────────────────────────────────
+
+
+async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle /admin command."""
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("Доступ запрещён.")
+        return ConversationHandler.END
+
+    await update.message.reply_text(
+        "🔐 Админ-панель",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
+            [InlineKeyboardButton("🎁 Создать промокод", callback_data="admin_promo")],
+            [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
+        ]),
+    )
+    return ADMIN_MENU
+
+
+async def show_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show bot statistics."""
+    query = update.callback_query
+    await query.answer()
+
+    stats = db.get_stats()
+
+    # Build effect stats text
+    effect_lines = []
+    for effect_id, effect in TRANSFORMATIONS.items():
+        count = stats["effect_stats"].get(effect_id, 0)
+        # Get emoji from label
+        emoji = effect["label"].split()[0]
+        name = " ".join(effect["label"].split()[1:])
+        effect_lines.append(f"{emoji} {name}: {count}")
+
+    effects_text = "\n".join(effect_lines)
+
+    text = (
+        f"📊 Статистика бота\n\n"
+        f"Пользователей: {stats['total_users']}\n"
+        f"Всего генераций: {stats['total_generations']}\n"
+        f"Куплено пакетов: {stats['total_purchases']}\n"
+        f"Доход: {stats['total_revenue']} ₽\n\n"
+        f"── По эффектам ──\n{effects_text}"
+    )
+
+    await query.edit_message_text(
+        text,
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+        ]),
+    )
+    return ADMIN_STATS
+
+
+async def show_admin_promo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show promo code creation menu."""
+    query = update.callback_query
+    await query.answer()
+
+    buttons = [
+        [InlineKeyboardButton(f"{amount} фото", callback_data=f"create_promo_{amount}")]
+        for amount in PROMO_AMOUNTS
+    ]
+    buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")])
+
+    await query.edit_message_text(
+        "🎁 Создать промокод\n\nСколько фото даёт промокод?",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+    return ADMIN_PROMO
+
+
+async def create_promo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Create a promo code."""
+    query = update.callback_query
+    await query.answer()
+
+    amount = int(query.data.replace("create_promo_", ""))
+    code = db.create_promo_code(credits=amount, max_uses=1)
+
+    await query.edit_message_text(
+        f"✅ Промокод создан!\n\nКод: {code}\nДаёт: +{amount} фото",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🎁 Создать ещё", callback_data="admin_promo")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+        ]),
+    )
+    return ADMIN_MENU
+
+
+async def admin_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Go back to admin menu."""
+    query = update.callback_query
+    await query.answer()
+
+    await query.edit_message_text(
+        "🔐 Админ-панель",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
+            [InlineKeyboardButton("🎁 Создать промокод", callback_data="admin_promo")],
+            [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
+        ]),
+    )
+    return ADMIN_MENU
+
+
+# ── Main ─────────────────────────────────────────────────────────────────────
 
 
 def main() -> None:
     """Start the bot."""
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
+    # Main conversation handler
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
+        entry_points=[
+            CommandHandler("start", start),
+            CommandHandler("admin", admin_command),
+        ],
         states={
-            CHOOSING: [CallbackQueryHandler(choose_transformation)],
+            MAIN_MENU: [
+                CallbackQueryHandler(show_categories, pattern="^menu_create$"),
+                CallbackQueryHandler(show_store, pattern="^menu_store$"),
+                CallbackQueryHandler(show_promo_input, pattern="^menu_promo$"),
+                CallbackQueryHandler(show_referral, pattern="^menu_referral$"),
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+                # Effect retry
+                CallbackQueryHandler(select_effect, pattern="^effect_"),
+            ],
+            CHOOSING_CATEGORY: [
+                CallbackQueryHandler(show_trends, pattern="^cat_trend$"),
+                CallbackQueryHandler(show_styles, pattern="^cat_style$"),
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ],
+            CHOOSING_TREND: [
+                CallbackQueryHandler(select_effect, pattern="^effect_"),
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ],
+            CHOOSING_STYLE: [
+                CallbackQueryHandler(select_effect, pattern="^effect_"),
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ],
             WAITING_PHOTO: [
                 MessageHandler(filters.PHOTO, handle_photo),
-                MessageHandler(
-                    ~filters.PHOTO & ~filters.COMMAND, unexpected_message
-                ),
+                MessageHandler(~filters.PHOTO & ~filters.COMMAND, photo_expected),
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ],
+            STORE: [
+                CallbackQueryHandler(buy_package, pattern="^buy_"),
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
             WAITING_PAYMENT: [
                 MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment),
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ],
+            PROMO_INPUT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_promo_code),
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ],
+            REFERRAL: [
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ],
+            ADMIN_MENU: [
+                CallbackQueryHandler(show_admin_stats, pattern="^admin_stats$"),
+                CallbackQueryHandler(show_admin_promo, pattern="^admin_promo$"),
+                CallbackQueryHandler(admin_back, pattern="^admin_back$"),
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ],
+            ADMIN_STATS: [
+                CallbackQueryHandler(admin_back, pattern="^admin_back$"),
+            ],
+            ADMIN_PROMO: [
+                CallbackQueryHandler(create_promo, pattern="^create_promo_"),
+                CallbackQueryHandler(admin_back, pattern="^admin_back$"),
             ],
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[
+            CommandHandler("start", start),
+            CommandHandler("admin", admin_command),
+        ],
     )
 
     app.add_handler(conv_handler)
 
-    # PreCheckoutQueryHandler must be registered at app level (outside ConversationHandler)
-    # because Telegram sends it as a separate update type that needs immediate response
+    # PreCheckoutQueryHandler must be at app level
     app.add_handler(PreCheckoutQueryHandler(pre_checkout))
 
     logger.info("Photo bot started. Polling...")

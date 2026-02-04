@@ -4,7 +4,14 @@ This file provides guidance to Claude Code when working with the Photo Bot proje
 
 ## Project Overview
 
-A Telegram bot that applies AI-powered photo transformations using Google Gemini, with YooMoney payments ($1.00 per transformation).
+A Telegram bot that applies AI-powered photo transformations using Google Gemini, with a credit-based payment system via YooMoney.
+
+**Key Features:**
+- 3 free generations for new users
+- Package purchases (5/10/25/50/100 credits in RUB)
+- Promo code system
+- Referral system (+3 credits when invited friend generates first photo)
+- Admin panel with statistics
 
 ## Common Commands
 
@@ -14,48 +21,62 @@ source .venv/bin/activate
 python "Photo bot/photo_bot.py"
 ```
 
+**Admin commands (in Telegram):**
+- `/admin` — Open admin panel (requires ADMIN_ID in .env)
+
 ## Architecture
 
 ### Conversation Flow
 
 ```
-/start → Inline keyboard (pick transformation)
-       → User sends photo → Bot stores in memory (user_data)
-       → Bot sends YooMoney invoice via Telegram Payments API
-       → User pays → Bot sends photo + prompt to Gemini
-       → Returns transformed PNG → Cleanup, conversation ends
+/start → Main Menu (with balance)
+       ├── Создать магию → Categories → Тренды / Меняем стиль → Effect → Description → Photo → Result
+       ├── Пополнить запасы → Package selection → Payment → Confirmation
+       ├── Промокод → Enter code → Success/Failure
+       └── Пригласить друга → Show referral link
+
+/admin → Admin Panel (ADMIN_ID only)
+       ├── Статистика → Show user count, generations, revenue, per-effect stats
+       └── Создать промокод → Select amount (10/25/50/100) → Show generated code
 ```
 
 ### Conversation States
 
-| State | Trigger | Next State |
-|-------|---------|------------|
-| CHOOSING | User taps transformation button | WAITING_PHOTO |
-| WAITING_PHOTO | User sends a photo | WAITING_PAYMENT |
-| WAITING_PAYMENT | Successful payment | END (restart with /start) |
+| State | Description |
+|-------|-------------|
+| MAIN_MENU | Main menu displayed |
+| CHOOSING_CATEGORY | Picking effect category |
+| CHOOSING_TREND | In "Тренды" submenu |
+| CHOOSING_STYLE | In "Меняем стиль" submenu |
+| WAITING_PHOTO | Awaiting photo upload |
+| STORE | Viewing package store |
+| WAITING_PAYMENT | Invoice sent |
+| PROMO_INPUT | Waiting for promo code text |
+| REFERRAL | Viewing referral screen |
+| ADMIN_MENU | Admin main menu |
+| ADMIN_STATS | Viewing statistics |
+| ADMIN_PROMO | Choosing promo credit amount |
 
-### Available Transformations
+### Effect Categories
 
-Defined in the `TRANSFORMATIONS` dict in `photo_bot.py`:
-- **cat_phone** — Replace phone with a cat
-- **big_afro** — Big afro haircut
+Two categories under "Создать магию":
+- **Тренды** — seasonal/occasion-based effects (rotates by modifying `category` field)
+- **Меняем стиль** — hairstyle/appearance changes (static)
 
-Adding a new transformation only requires adding a new entry with `label` and `prompt` keys.
+### Credit System
 
-### Payment Integration
+- New users get 3 free credits
+- Credit deducted when photo upload starts
+- Credit refunded if Gemini fails
+- Referrer gets +3 credits when referred user completes first generation
 
-Uses Telegram's native Payments API with YooMoney as the provider:
-- Price: $1.00 USD (100 cents) per transformation
-- `PreCheckoutQueryHandler` registered at app level (outside ConversationHandler) for immediate response
-- Invoice sent inline after photo upload
-- No refund logic currently implemented
+### Database Schema
 
-### Gemini Integration
-
-- Model: `gemini-3-pro-image-preview`
-- Input: user photo (PIL Image) + transformation prompt text
-- Output: PNG image extracted from response parts
-- Synchronous call via `google-genai` SDK
+**users** — User accounts and balances
+**promo_codes** — Created promo codes
+**promo_redemptions** — Tracks who redeemed which codes
+**generations** — Each generation (for per-effect statistics)
+**purchases** — Package purchase history (for revenue tracking)
 
 ## Configuration
 
@@ -66,15 +87,19 @@ All secrets stored in `Photo bot/.env` and loaded via `python-dotenv`:
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot API token |
 | `GEMINI_API_KEY` | Google Gemini API key |
 | `YOOMONEY_PROVIDER_TOKEN` | YooMoney payment provider token from BotFather |
-
-Application constants (price, currency, model name, transformations) are defined in `photo_bot.py`.
+| `ADMIN_ID` | Your Telegram user ID (for /admin access) |
+| `BOT_USERNAME` | Bot username for referral links (without @) |
 
 ## Key Files
 
-- `Photo bot/photo_bot.py` — Entire bot logic (single-file architecture)
-- `Photo bot/.env` — Environment variables with secrets (not tracked in git)
-- `Photo bot/requirements.txt` — Python dependencies
-- `Photo bot/Procfile` — Deployment config (`worker: python photo_bot.py`)
+| File | Purpose |
+|------|---------|
+| `photo_bot.py` | Main bot logic, handlers, conversation flow |
+| `database.py` | SQLite database operations |
+| `photo_bot.db` | SQLite database file (auto-created) |
+| `.env` | Environment variables with secrets |
+| `requirements.txt` | Python dependencies |
+| `Procfile` | Deployment config |
 
 ## Dependencies
 
@@ -85,22 +110,39 @@ Pillow>=12.0.0
 python-dotenv>=1.0.0
 ```
 
+## Pricing (RUB)
+
+| Package | Price | Per photo |
+|---------|-------|-----------|
+| 5 фото | 59 ₽ | 11.80 ₽ |
+| 10 фото | 99 ₽ | 9.90 ₽ |
+| 25 фото | 229 ₽ | 9.16 ₽ |
+| 50 фото | 399 ₽ | 7.98 ₽ |
+| 100 фото | 699 ₽ | 6.99 ₽ |
+
+## Adding New Effects
+
+Add to `TRANSFORMATIONS` dict in `photo_bot.py`:
+
+```python
+"effect_id": {
+    "label": "🎨 Display Name",
+    "description": "Description shown to user",
+    "prompt": "Prompt sent to Gemini...",
+    "category": "trend",  # or "style"
+},
+```
+
 ## Deployment
 
-- Procfile-based (Heroku-ready)
-- Runs as a worker process using long polling
-- No webhook setup currently — would need to switch for production
+- Procfile-based (Heroku/Railway/Render ready)
+- SQLite database — ensure persistent storage on cloud
+- Or migrate to PostgreSQL by modifying `database.py`
 
 ## Security Notes
 
 **Protected files (must never be committed to git):**
-- `Photo bot/.env` — API keys, bot token, payment provider token
+- `.env` — API keys, bot token, payment provider token
+- `photo_bot.db` — User data
 
-`.gitignore` covers `.env`, `__pycache__/`, `*.pyc`, `.venv/`.
-
-## Known Limitations
-
-- Photos stored in memory (`user_data`) — lost on restart
-- No transaction logging or usage analytics
-- No per-user rate limiting
-- If Gemini fails after payment succeeds, user loses money (no refund flow)
+`.gitignore` should include `.env`, `*.db`, `__pycache__/`, `.venv/`.
