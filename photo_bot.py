@@ -194,10 +194,21 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     credits = db_user["credits"] if db_user else 0
     name = user.first_name or "друг"
 
-    await query.edit_message_text(
-        f"Привет, {name}!\n💰 Баланс: {credits} фото",
-        reply_markup=main_menu_keyboard(),
-    )
+    text = f"Привет, {name}!\n💰 Баланс: {credits} фото"
+
+    # Check if message has photo (can't edit photo messages to text)
+    if query.message.photo:
+        await query.message.delete()
+        await context.bot.send_message(
+            chat_id=user.id,
+            text=text,
+            reply_markup=main_menu_keyboard(),
+        )
+    else:
+        await query.edit_message_text(
+            text,
+            reply_markup=main_menu_keyboard(),
+        )
     return MAIN_MENU
 
 
@@ -346,7 +357,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         result_text = None
         for part in response.parts:
             if part.inline_data is not None:
-                result_image = part.as_image()
+                # Convert Gemini response to PIL Image
+                image_data = part.inline_data.data
+                result_image = Image.open(io.BytesIO(image_data))
             elif part.text is not None:
                 result_text = part.text
 
@@ -453,20 +466,29 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     package = PACKAGES[package_id]
     context.user_data["pending_package"] = package_id
 
-    # Delete the menu message
-    await query.delete_message()
+    try:
+        # Delete the menu message
+        await query.delete_message()
 
-    # Send invoice
-    await context.bot.send_invoice(
-        chat_id=update.effective_chat.id,
-        title=f"Пакет {package['credits']} фото",
-        description=f"Пополнение баланса на {package['credits']} фото",
-        payload=f"package_{package_id}_{update.effective_user.id}",
-        currency="RUB",
-        prices=[LabeledPrice(f"{package['credits']} фото", package["price"])],
-        provider_token=YOOMONEY_PROVIDER_TOKEN,
-    )
-    return WAITING_PAYMENT
+        # Send invoice
+        await context.bot.send_invoice(
+            chat_id=update.effective_chat.id,
+            title=f"Пакет {package['credits']} фото",
+            description=f"Пополнение баланса на {package['credits']} фото",
+            payload=f"package_{package_id}_{update.effective_user.id}",
+            currency="RUB",
+            prices=[LabeledPrice(f"{package['credits']} фото", package["price"])],
+            provider_token=YOOMONEY_PROVIDER_TOKEN,
+        )
+        return WAITING_PAYMENT
+    except Exception as e:
+        logger.error(f"Payment error: {e}")
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"❌ Ошибка платежа: {e}\n\nПопробуйте позже.",
+            reply_markup=back_to_main_keyboard(),
+        )
+        return MAIN_MENU
 
 
 async def pre_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -573,8 +595,10 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     """Handle /admin command."""
     user = update.effective_user
 
+    logger.info(f"Admin attempt: user.id={user.id}, ADMIN_ID={ADMIN_ID}")
+
     if user.id != ADMIN_ID:
-        await update.message.reply_text("Доступ запрещён.")
+        await update.message.reply_text(f"Доступ запрещён. (Your ID: {user.id})")
         return ConversationHandler.END
 
     await update.message.reply_text(
