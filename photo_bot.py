@@ -425,6 +425,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         input_image = Image.open(io.BytesIO(bytes(photo_bytes)))
 
         # Call Gemini
+        logger.info(f"Calling Gemini model: {GEMINI_MODEL}")
         response = gemini_client.models.generate_content(
             model=GEMINI_MODEL,
             contents=[effect["prompt"], input_image],
@@ -432,6 +433,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 response_modalities=["Text", "Image"],
             ),
         )
+        # Log model info from response if available
+        if hasattr(response, 'model_version'):
+            logger.info(f"Gemini response model_version: {response.model_version}")
+        logger.info(f"Gemini response candidates: {len(response.candidates) if response.candidates else 0}")
 
         # Extract result image
         result_image = None
