@@ -57,8 +57,14 @@ TRANSFORMATIONS = {
         "label": "💌 Открытка в стиле Love is",
         "description": "Превращу фото в милую открытку в стиле Love is",
         "prompt": (
-            "Transform this photo into a Love Is comic style illustration. "
-            "Make it cute and romantic like the famous Love Is comics."
+            "Transform this photo into a 'Love Is...' comic style illustration. "
+            "Style: Simple cartoon with clean black outlines, soft pastel colors, white background. "
+            "Vintage 1990s bubble-gum wrapper aesthetic - minimal, cute, wholesome. "
+            "Characters: Convert the person(s) into cartoon characters with chibi-like rounded bodies. "
+            "Preserve their hairstyle, hair color, face shape, glasses if any. Gentle happy expressions. "
+            "Composition: Centered, full body visible, white background only. "
+            "Add 'Love is...' text at bottom in handwritten style with a sweet phrase about the scene. "
+            "NOT realistic. NOT detailed. Keep it minimal and cute like classic Love Is comics."
         ),
         "category": "trend",
     },
@@ -66,8 +72,14 @@ TRANSFORMATIONS = {
         "label": "🐱 Котик вместо телефона",
         "description": "Заменю телефон в руках на милого котика",
         "prompt": (
-            "Replace any phone or mobile device the person is holding "
-            "with a cute cat. Keep everything else the same."
+            "Replace the phone in the person's hand with a small fluffy kitten. "
+            "The kitten must be in the exact position and size where the phone was. "
+            "The hand should naturally hold/cradle the kitten with fingers wrapped around it. "
+            "Match the kitten's fur lighting and shadows to the original scene. "
+            "The kitten should look calm and relaxed, possibly looking at the camera. "
+            "Keep everything else exactly the same: person, face, pose, background, framing, colors, camera angle. "
+            "Remove the phone completely - no trace of it. "
+            "Photorealistic result. No style changes. No enhancements. No extra objects."
         ),
         "category": "trend",
     },
@@ -94,6 +106,7 @@ TRANSFORMATIONS = {
 # ── Pricing (RUB, in kopecks for Telegram) ───────────────────────────────────
 
 PACKAGES = {
+    # Note: YooKassa test mode may require min 100₽. Prices in kopecks.
     "pkg_5": {"credits": 5, "price": 5900, "label": "5 фото — 59 ₽"},
     "pkg_10": {"credits": 10, "price": 9900, "label": "10 фото — 99 ₽"},
     "pkg_25": {"credits": 25, "price": 22900, "label": "25 фото — 229 ₽"},
@@ -480,6 +493,15 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
             prices=[LabeledPrice(f"{package['credits']} фото", package["price"])],
             provider_token=YOOMONEY_PROVIDER_TOKEN,
         )
+
+        # Send cancel button separately (invoices can't have inline buttons)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Нажми кнопку ниже, чтобы отменить покупку:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("❌ Отмена", callback_data="cancel_payment")]
+            ]),
+        )
         return WAITING_PAYMENT
     except Exception as e:
         logger.error(f"Payment error: {e}")
@@ -489,6 +511,29 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
             reply_markup=back_to_main_keyboard(),
         )
         return MAIN_MENU
+
+
+async def cancel_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Cancel payment and return to main menu."""
+    query = update.callback_query
+    await query.answer()
+    context.user_data.pop("pending_package", None)
+    await query.edit_message_text("Покупка отменена.")
+    return await show_main_menu_fresh(update, context)
+
+
+async def show_main_menu_fresh(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Send a fresh main menu message (not edit)."""
+    user = update.effective_user
+    db_user = db.get_user(user.id)
+    credits = db_user["credits"] if db_user else 0
+    name = user.first_name or "друг"
+    await context.bot.send_message(
+        chat_id=user.id,
+        text=f"Привет, {name}!\n💰 Баланс: {credits} фото",
+        reply_markup=main_menu_keyboard(),
+    )
+    return MAIN_MENU
 
 
 async def pre_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -747,6 +792,7 @@ def main() -> None:
             ],
             WAITING_PAYMENT: [
                 MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment),
+                CallbackQueryHandler(cancel_payment, pattern="^cancel_payment$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
             PROMO_INPUT: [
