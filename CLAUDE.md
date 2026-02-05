@@ -151,3 +151,23 @@ Add to `TRANSFORMATIONS` dict in `photo_bot.py`:
 - `photo_bot.db` — User data
 
 `.gitignore` should include `.env`, `*.db`, `__pycache__/`, `.venv/`.
+
+## Session Handoff
+
+**Last updated:** 2026-02-06
+
+**Git status:** 8 commits ahead of origin (not pushed)
+
+### Pending Fixes
+- [ ] Fix bug: reply keyboard buttons don't work when on layer 2/3 (only work from MAIN_MENU state)
+- [ ] Update `SUPPORT_USERNAME` in `.env` — currently set to email, should be Telegram username
+
+### Tomorrow's Tasks
+- [ ] Add ~25 more effects (currently have 4)
+- [ ] Add welcome screen image (big picture on /start)
+- [ ] Add example result images for each effect (25 images needed)
+
+### Technical Notes
+- Gemini model verified: `gemini-3-pro-image-preview` (Nano Banana Pro)
+- Model logging added for debugging
+- MVP is feature-complete, ready for content expansion
