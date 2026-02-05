@@ -17,6 +17,7 @@ from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    ReplyKeyboardMarkup,
     LabeledPrice,
 )
 from telegram.ext import (
@@ -41,6 +42,7 @@ GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 YOOMONEY_PROVIDER_TOKEN = os.environ["YOOMONEY_PROVIDER_TOKEN"]
 ADMIN_ID = int(os.environ.get("ADMIN_ID", 0))
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "your_bot")
+SUPPORT_USERNAME = os.environ.get("SUPPORT_USERNAME", "")  # Support account for "О проекте"
 
 GEMINI_MODEL = "gemini-3-pro-image-preview"
 
@@ -128,10 +130,11 @@ PROMO_AMOUNTS = [10, 25, 50, 100]
     WAITING_PAYMENT,
     PROMO_INPUT,
     REFERRAL,
+    ABOUT,
     ADMIN_MENU,
     ADMIN_STATS,
     ADMIN_PROMO,
-) = range(12)
+) = range(13)
 
 # ── Gemini client ────────────────────────────────────────────────────────────
 
@@ -145,13 +148,26 @@ def get_effects_by_category(category: str) -> dict:
     return {k: v for k, v in TRANSFORMATIONS.items() if v.get("category") == category}
 
 
+def reply_keyboard() -> ReplyKeyboardMarkup:
+    """Build persistent reply keyboard (below input field)."""
+    return ReplyKeyboardMarkup(
+        [
+            ["✨ Создать магию"],
+            ["💳 Пополнить запасы", "🎁 Промокод"],
+            ["👥 Пригласить друга", "ℹ️ О проекте"],
+        ],
+        resize_keyboard=True,
+    )
+
+
 def main_menu_keyboard() -> InlineKeyboardMarkup:
-    """Build main menu keyboard."""
+    """Build main menu inline keyboard."""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("✨ Создать магию", callback_data="menu_create")],
         [InlineKeyboardButton("💳 Пополнить запасы", callback_data="menu_store")],
         [InlineKeyboardButton("🎁 Промокод", callback_data="menu_promo")],
         [InlineKeyboardButton("👥 Пригласить друга", callback_data="menu_referral")],
+        [InlineKeyboardButton("ℹ️ О проекте", callback_data="menu_about")],
     ])
 
 
@@ -190,9 +206,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     credits = db_user["credits"]
     name = user.first_name or "друг"
 
+    # Send reply keyboard (persistent) + inline menu
     await update.message.reply_text(
         f"Привет, {name}!\n💰 Баланс: {credits} фото",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=reply_keyboard(),
     )
     return MAIN_MENU
 
@@ -215,14 +232,65 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await context.bot.send_message(
             chat_id=user.id,
             text=text,
-            reply_markup=main_menu_keyboard(),
+            reply_markup=reply_keyboard(),
         )
     else:
-        await query.edit_message_text(
-            text,
-            reply_markup=main_menu_keyboard(),
+        await query.edit_message_text(text)
+        await context.bot.send_message(
+            chat_id=user.id,
+            text="Выбери действие:",
+            reply_markup=reply_keyboard(),
         )
     return MAIN_MENU
+
+
+# ── Reply Keyboard Handlers ─────────────────────────────────────────────────
+
+
+async def handle_reply_create(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle '✨ Создать магию' from reply keyboard."""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔥 Тренды", callback_data="cat_trend")],
+        [InlineKeyboardButton("💇 Меняем стиль", callback_data="cat_style")],
+        [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
+    ])
+    await update.message.reply_text("Выбери категорию:", reply_markup=keyboard)
+    return CHOOSING_CATEGORY
+
+
+async def handle_reply_store(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle '💳 Пополнить запасы' from reply keyboard."""
+    buttons = [
+        [InlineKeyboardButton(pkg["label"], callback_data=f"buy_{key}")]
+        for key, pkg in PACKAGES.items()
+    ]
+    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+    await update.message.reply_text("Выбери пакет:", reply_markup=InlineKeyboardMarkup(buttons))
+    return STORE
+
+
+async def handle_reply_promo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle '🎁 Промокод' from reply keyboard."""
+    await update.message.reply_text(
+        "Введи промокод:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
+        ]),
+    )
+    return PROMO_INPUT
+
+
+async def handle_reply_referral(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle '👥 Пригласить друга' from reply keyboard."""
+    user = update.effective_user
+    ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
+    await update.message.reply_text(
+        f"Приглашай друзей и получай\n+3 фото за каждого!\n\nТвоя ссылка:\n{ref_link}",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
+        ]),
+    )
+    return REFERRAL
 
 
 # ── Create Magic Flow ────────────────────────────────────────────────────────
@@ -633,6 +701,60 @@ async def show_referral(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     return REFERRAL
 
 
+# ── About Flow ──────────────────────────────────────────────────────────────
+
+
+async def show_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show about/disclaimer info."""
+    query = update.callback_query
+    await query.answer()
+
+    text = (
+        "ℹ️ О проекте\n\n"
+        "Проект предназначен для людей достигших возраста 18+ "
+        "и демонстрирует работу нейросетей.\n\n"
+        "Все созданные изображения не могут быть использованы "
+        "для рекламных или иных порочащих репутацию других граждан целей.\n\n"
+        "Если вам кажется что ваши права нарушены или у вас возникли "
+        "вопросы/предложения по работе проекта – пишите в нашу поддержку."
+    )
+
+    buttons = []
+    if SUPPORT_USERNAME:
+        buttons.append([InlineKeyboardButton("✉️ Написать в поддержку", url=f"https://t.me/{SUPPORT_USERNAME}")])
+    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+
+    await query.edit_message_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+    return ABOUT
+
+
+async def show_about_from_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show about/disclaimer info (from reply keyboard text)."""
+    text = (
+        "ℹ️ О проекте\n\n"
+        "Проект предназначен для людей достигших возраста 18+ "
+        "и демонстрирует работу нейросетей.\n\n"
+        "Все созданные изображения не могут быть использованы "
+        "для рекламных или иных порочащих репутацию других граждан целей.\n\n"
+        "Если вам кажется что ваши права нарушены или у вас возникли "
+        "вопросы/предложения по работе проекта – пишите в нашу поддержку."
+    )
+
+    buttons = []
+    if SUPPORT_USERNAME:
+        buttons.append([InlineKeyboardButton("✉️ Написать в поддержку", url=f"https://t.me/{SUPPORT_USERNAME}")])
+    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+
+    await update.message.reply_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+    return ABOUT
+
+
 # ── Admin Menu ───────────────────────────────────────────────────────────────
 
 
@@ -675,13 +797,24 @@ async def show_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     effects_text = "\n".join(effect_lines)
 
+    # Build package stats text
+    package_lines = []
+    package_stats = stats.get("package_stats", {})
+    for pkg_id, pkg in PACKAGES.items():
+        credits = pkg["credits"]
+        pkg_data = package_stats.get(credits, {"count": 0, "revenue": 0})
+        package_lines.append(f"{credits} фото: {pkg_data['count']} шт. ({pkg_data['revenue']} ₽)")
+
+    packages_text = "\n".join(package_lines)
+
     text = (
         f"📊 Статистика бота\n\n"
         f"Пользователей: {stats['total_users']}\n"
         f"Всего генераций: {stats['total_generations']}\n"
         f"Куплено пакетов: {stats['total_purchases']}\n"
         f"Доход: {stats['total_revenue']} ₽\n\n"
-        f"── По эффектам ──\n{effects_text}"
+        f"── По эффектам ──\n{effects_text}\n\n"
+        f"── По пакетам ──\n{packages_text}"
     )
 
     await query.edit_message_text(
@@ -760,13 +893,21 @@ def main() -> None:
         ],
         states={
             MAIN_MENU: [
+                # Inline keyboard handlers
                 CallbackQueryHandler(show_categories, pattern="^menu_create$"),
                 CallbackQueryHandler(show_store, pattern="^menu_store$"),
                 CallbackQueryHandler(show_promo_input, pattern="^menu_promo$"),
                 CallbackQueryHandler(show_referral, pattern="^menu_referral$"),
+                CallbackQueryHandler(show_about, pattern="^menu_about$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
                 # Effect retry
                 CallbackQueryHandler(select_effect, pattern="^effect_"),
+                # Reply keyboard handlers
+                MessageHandler(filters.Regex("^✨ Создать магию$"), handle_reply_create),
+                MessageHandler(filters.Regex("^💳 Пополнить запасы$"), handle_reply_store),
+                MessageHandler(filters.Regex("^🎁 Промокод$"), handle_reply_promo),
+                MessageHandler(filters.Regex("^👥 Пригласить друга$"), handle_reply_referral),
+                MessageHandler(filters.Regex("^ℹ️ О проекте$"), show_about_from_text),
             ],
             CHOOSING_CATEGORY: [
                 CallbackQueryHandler(show_trends, pattern="^cat_trend$"),
@@ -800,6 +941,9 @@ def main() -> None:
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
             REFERRAL: [
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ],
+            ABOUT: [
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
             ADMIN_MENU: [

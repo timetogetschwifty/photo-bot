@@ -373,6 +373,20 @@ def get_stats() -> dict:
     )
     effect_stats = {row["effect_id"]: row["count"] for row in cursor.fetchall()}
 
+    # Per-package stats (breakdown by credits purchased)
+    cursor.execute(
+        """
+        SELECT package_credits, COUNT(*) as count, COALESCE(SUM(price_rub), 0) as revenue
+        FROM purchases
+        GROUP BY package_credits
+        ORDER BY package_credits
+        """
+    )
+    package_stats = {
+        row["package_credits"]: {"count": row["count"], "revenue": row["revenue"]}
+        for row in cursor.fetchall()
+    }
+
     conn.close()
 
     return {
@@ -381,6 +395,7 @@ def get_stats() -> dict:
         "total_purchases": total_purchases,
         "total_revenue": total_revenue,
         "effect_stats": effect_stats,
+        "package_stats": package_stats,
     }
 
 

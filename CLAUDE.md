@@ -11,7 +11,9 @@ A Telegram bot that applies AI-powered photo transformations using Google Gemini
 - Package purchases (5/10/25/50/100 credits in RUB)
 - Promo code system
 - Referral system (+3 credits when invited friend generates first photo)
-- Admin panel with statistics
+- Admin panel with statistics (per-effect and per-package breakdown)
+- Hybrid keyboard (persistent reply keyboard + inline buttons)
+- "О проекте" section with 18+ disclaimer and support link
 
 ## Common Commands
 
@@ -29,14 +31,15 @@ python "Photo bot/photo_bot.py"
 ### Conversation Flow
 
 ```
-/start → Main Menu (with balance)
-       ├── Создать магию → Categories → Тренды / Меняем стиль → Effect → Description → Photo → Result
-       ├── Пополнить запасы → Package selection → Payment → Confirmation
-       ├── Промокод → Enter code → Success/Failure
-       └── Пригласить друга → Show referral link
+/start → Main Menu (with balance + persistent reply keyboard)
+       ├── ✨ Создать магию → Categories → Тренды / Меняем стиль → Effect → Description → Photo → Result
+       ├── 💳 Пополнить запасы → Package selection → Payment → Confirmation
+       ├── 🎁 Промокод → Enter code → Success/Failure
+       ├── 👥 Пригласить друга → Show referral link
+       └── ℹ️ О проекте → Disclaimer + Support link
 
 /admin → Admin Panel (ADMIN_ID only)
-       ├── Статистика → Show user count, generations, revenue, per-effect stats
+       ├── Статистика → User count, generations, revenue, per-effect stats, per-package breakdown
        └── Создать промокод → Select amount (10/25/50/100) → Show generated code
 ```
 
@@ -53,6 +56,7 @@ python "Photo bot/photo_bot.py"
 | WAITING_PAYMENT | Invoice sent |
 | PROMO_INPUT | Waiting for promo code text |
 | REFERRAL | Viewing referral screen |
+| ABOUT | Viewing "О проекте" screen |
 | ADMIN_MENU | Admin main menu |
 | ADMIN_STATS | Viewing statistics |
 | ADMIN_PROMO | Choosing promo credit amount |
@@ -89,6 +93,7 @@ All secrets stored in `Photo bot/.env` and loaded via `python-dotenv`:
 | `YOOMONEY_PROVIDER_TOKEN` | YooMoney payment provider token from BotFather |
 | `ADMIN_ID` | Your Telegram user ID (for /admin access) |
 | `BOT_USERNAME` | Bot username for referral links (without @) |
+| `SUPPORT_USERNAME` | Support account username for "О проекте" (optional, without @) |
 
 ## Key Files
 
