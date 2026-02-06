@@ -101,6 +101,8 @@ All secrets stored in `Photo bot/.env` and loaded via `python-dotenv`:
 |------|---------|
 | `photo_bot.py` | Main bot logic, handlers, conversation flow |
 | `database.py` | SQLite database operations |
+| `effects.yaml` | Effect definitions (labels, prompts, tips, images) |
+| `images/` | Example images for effects |
 | `photo_bot.db` | SQLite database file (auto-created) |
 | `.env` | Environment variables with secrets |
 | `requirements.txt` | Python dependencies |
@@ -113,30 +115,76 @@ python-telegram-bot==22.5
 google-genai>=1.61.0
 Pillow>=12.0.0
 python-dotenv>=1.0.0
+PyYAML>=6.0
 ```
 
 ## Pricing (RUB)
 
 | Package | Price | Per photo |
 |---------|-------|-----------|
-| 5 фото | 59 ₽ | 11.80 ₽ |
 | 10 фото | 99 ₽ | 9.90 ₽ |
 | 25 фото | 229 ₽ | 9.16 ₽ |
 | 50 фото | 399 ₽ | 7.98 ₽ |
 | 100 фото | 699 ₽ | 6.99 ₽ |
 
-## Adding New Effects
+## Managing Effects
 
-Add to `TRANSFORMATIONS` dict in `photo_bot.py`:
+Effects are defined in `effects.yaml`. Add new effects there:
 
-```python
-"effect_id": {
-    "label": "🎨 Display Name",
-    "description": "Description shown to user",
-    "prompt": "Prompt sent to Gemini...",
-    "category": "trend",  # or "style"
-},
+```yaml
+effect_id:
+  enabled: true       # false to hide without deleting (keeps stats)
+  order: 10           # display order within category (lower = first)
+  label: "🎨 Display Name"
+  description: "Description shown to user"
+  tips: |
+    📸 Рекомендации:
+    • Лицо крупным планом
+    • Хорошее освещение
+  prompt: |
+    Detailed prompt for Gemini...
+  category: trend     # or: style
+  example_image: images/effect_id_example.jpg
 ```
+
+### Effect Management
+
+| Action | How |
+|--------|-----|
+| Add new effect | Copy template, fill in fields, set `order` |
+| Disable effect | Set `enabled: false` (keeps stats history) |
+| Reorder effects | Change `order` values (sorted ascending) |
+| Remove effect | Delete from YAML (loses ability to track old stats) |
+
+### Effect Card Structure (shown when user selects effect)
+
+```
+┌─────────────────────────────────────────┐
+│  [Example Image 800×800]                │
+│                                         │
+│  💌 Открытка в стиле Love is            │
+│                                         │
+│  Превращу фото в милую открытку         │
+│  в стиле Love is                        │
+│                                         │
+│  📸 Рекомендации:                       │
+│  • Лицо крупным планом                  │
+│  • Хорошее освещение                    │
+│  • Без очков                            │
+│                                         │
+│  [❌ Отмена]                            │
+└─────────────────────────────────────────┘
+```
+
+### Example Image Requirements
+
+| Property | Value |
+|----------|-------|
+| Size | 800×800 px or 800×1000 px |
+| Format | JPG |
+| Quality | 80-85% |
+| File size | 100-300 KB each |
+| Storage | `Photo bot/images/` folder or Telegram file_id |
 
 ## Deployment
 
@@ -156,18 +204,20 @@ Add to `TRANSFORMATIONS` dict in `photo_bot.py`:
 
 **Last updated:** 2026-02-06
 
-**Git status:** 8 commits ahead of origin (not pushed)
+**Git status:** Changes pending (effects.yaml added, CLAUDE.md updated)
 
 ### Pending Fixes
 - [ ] Fix bug: reply keyboard buttons don't work when on layer 2/3 (only work from MAIN_MENU state)
 - [ ] Update `SUPPORT_USERNAME` in `.env` — currently set to email, should be Telegram username
+- [ ] Update `photo_bot.py` to load effects from `effects.yaml` instead of hardcoded dict
 
-### Tomorrow's Tasks
-- [ ] Add ~25 more effects (currently have 4)
+### Content Tasks
+- [ ] Add ~50 effects to `effects.yaml` (currently have 4)
+- [ ] Add example images to `images/` folder (one per effect)
 - [ ] Add welcome screen image (big picture on /start)
-- [ ] Add example result images for each effect (25 images needed)
 
 ### Technical Notes
 - Gemini model verified: `gemini-3-pro-image-preview` (Nano Banana Pro)
 - Model logging added for debugging
+- Effects stored in `effects.yaml` with `enabled` and `order` fields for management
 - MVP is feature-complete, ready for content expansion

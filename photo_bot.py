@@ -109,7 +109,6 @@ TRANSFORMATIONS = {
 
 PACKAGES = {
     # Note: YooKassa test mode may require min 100₽. Prices in kopecks.
-    "pkg_5": {"credits": 5, "price": 5900, "label": "5 фото — 59 ₽"},
     "pkg_10": {"credits": 10, "price": 9900, "label": "10 фото — 99 ₽"},
     "pkg_25": {"credits": 25, "price": 22900, "label": "25 фото — 229 ₽"},
     "pkg_50": {"credits": 50, "price": 39900, "label": "50 фото — 399 ₽"},
