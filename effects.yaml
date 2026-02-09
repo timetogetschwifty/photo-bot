@@ -1,111 +1,96 @@
 # Photo Bot Effects Configuration
 # ═══════════════════════════════════════════════════════════════════════════════
 #
-# Fields:
-#   enabled      - true/false to show/hide effect (keeps data for analytics)
-#   order        - display order within category (lower = first)
-#   label        - button text with emoji
-#   description  - shown on effect card
-#   tips         - photo recommendations
-#   prompt       - Gemini prompt
-#   category     - "trend" or "style"
-#   example_image - path to example image (or Telegram file_id after first upload)
+# CATEGORIES:
+#   enabled  - true/false to show/hide
+#   order    - display order (lower = first)
+#   label    - button text with emoji
+#   parent   - parent category id (for subcategories)
 #
-# To disable an effect: set enabled: false (don't delete - keeps stats history)
-# To reorder: change order values (effects sorted ascending within category)
+# EFFECTS:
+#   enabled  - true/false to show/hide (keeps data for analytics)
+#   order    - display order within category (lower = first)
+#   label    - button text with emoji
+#   tips     - photo recommendations (optional)
+#   category - category id (omit for top-level effects)
+#
+# Auto-resolved files (by effect_id):
+#   prompts/{effect_id}.txt  — prompt text
+#   images/{effect_id}.jpg   — example image
+#
+# To disable: set enabled: false (don't delete - keeps stats history)
+# To reorder: change order values (sorted ascending)
+#
+# HIERARCHY EXAMPLES:
+#   No category  → shows on "Create" screen (level 0)
+#   category: X  → shows under category X (level 1)
+#   parent: X    → makes a category a subcategory of X (level 2)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-effects:
-  # ════════════════════════════════════════════════════════════════════════════
-  # ТРЕНДЫ (category: trend) — seasonal/occasion-based effects
-  # ════════════════════════════════════════════════════════════════════════════
+# ── Categories ────────────────────────────────────────────────────────────────
 
-  love_is:
+categories:
+  trend:
+    enabled: false
+    order: 10
+    label: "🔥 Тренды"
+
+  style:
     enabled: true
     order: 1
+    label: "👗 Стиль и мода"
+
+  movie:
+    enabled: false
+    order: 2
+    label: "🎬 Меняем стиль"
+
+# ── Effects ───────────────────────────────────────────────────────────────────
+
+effects:
+  love_is:
+    enabled: false
+    order: 1
     label: "💌 Открытка в стиле Love is"
-    description: "Превращу фото в милую открытку в стиле Love is"
     tips: |
       📸 Рекомендации:
       • Лицо крупным планом
       • Хорошее освещение
       • Без очков
-    prompt: |
-      Transform this photo into a Love Is comic style illustration.
-      Keep the person recognizable but in the cute cartoon style.
-      Add romantic elements typical of Love Is comics.
     category: trend
-    example_image: images/love_is_example.jpg
 
   cat_phone:
     enabled: true
     order: 2
     label: "🐱 Котик вместо телефона"
-    description: "Заменю телефон в руках на милого котика"
     tips: |
       📸 Рекомендации:
       • Держите телефон в руках
       • Руки должны быть видны
-    prompt: |
-      Replace any phone or mobile device the person is holding with a cute fluffy cat.
-      The cat should fit naturally in their hands.
-      Keep everything else in the photo unchanged.
     category: trend
-    example_image: images/cat_phone_example.jpg
-
-  # ════════════════════════════════════════════════════════════════════════════
-  # МЕНЯЕМ СТИЛЬ (category: style) — hairstyle/appearance changes
-  # ════════════════════════════════════════════════════════════════════════════
 
   afro:
     enabled: true
     order: 1
-    label: "🦱 Афро"
-    description: "Добавлю пышную афро-причёску"
-    tips: |
-      📸 Рекомендации:
-      • Лицо крупным планом
-      • Волосы полностью видны
-      • Без головного убора
-    prompt: |
-      Change the person's hairstyle to a big, voluminous afro.
-      Keep their face and all other features exactly the same.
-      The afro should look natural and well-styled.
+    label: "🧪 Тест промпта"
     category: style
-    example_image: images/afro_example.jpg
 
   mullet:
     enabled: true
     order: 2
-    label: "🥸 Маллет и усы"
-    description: "Добавлю причёску маллет и усы"
-    tips: |
-      📸 Рекомендации:
-      • Лицо крупным планом
-      • Хорошее освещение
-    prompt: |
-      Give the person a classic mullet haircut (short on top and sides, long in the back)
-      and add a thick mustache. Keep their face recognizable.
-      Style should look like 1980s rock star.
+    label: "Маллет и усы"
     category: style
-    example_image: images/mullet_example.jpg
 
-  # ════════════════════════════════════════════════════════════════════════════
-  # TEMPLATE — copy this for new effects
-  # ════════════════════════════════════════════════════════════════════════════
-  #
-  # effect_id:
-  #   enabled: true
-  #   order: 10
-  #   label: "🎨 Display Name"
-  #   description: "Short description shown to user"
-  #   tips: |
-  #     📸 Рекомендации:
-  #     • Tip 1
-  #     • Tip 2
-  #     • Tip 3
-  #   prompt: |
-  #     Detailed prompt for Gemini...
-  #     Can be multiple lines.
-  #   category: trend  # or: style
-  #   example_image: images/effect_id_example.jpg
+# ── TEMPLATE ──────────────────────────────────────────────────────────────────
+#
+# new_effect:
+#   enabled: true
+#   order: 10
+#   label: "🎨 Display Name"
+#   tips: |
+#     📸 Рекомендации:
+#     • Tip 1
+#   category: style        # omit for top-level
+#
+# Then create: prompts/new_effect.txt
+# Optionally:  images/new_effect.jpg

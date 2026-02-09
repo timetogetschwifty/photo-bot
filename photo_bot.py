@@ -8,6 +8,7 @@ Features: credit system, promo codes, referrals, package purchases via YooMoney.
 import os
 import io
 import logging
+import yaml
 
 from dotenv import load_dotenv
 from PIL import Image
@@ -52,58 +53,75 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ── Transformations ──────────────────────────────────────────────────────────
+# ── Load effects and categories from YAML ─────────────────────────────────────
 
-TRANSFORMATIONS = {
-    "love_is": {
-        "label": "💌 Открытка в стиле Love is",
-        "description": "Превращу фото в милую открытку в стиле Love is",
-        "prompt": (
-            "Transform this photo into a 'Love Is...' comic style illustration. "
-            "Style: Simple cartoon with clean black outlines, soft pastel colors, white background. "
-            "Vintage 1990s bubble-gum wrapper aesthetic - minimal, cute, wholesome. "
-            "Characters: Convert the person(s) into cartoon characters with chibi-like rounded bodies. "
-            "Preserve their hairstyle, hair color, face shape, glasses if any. Gentle happy expressions. "
-            "Composition: Centered, full body visible, white background only. "
-            "Add 'Love is...' text at bottom in handwritten style with a sweet phrase about the scene. "
-            "NOT realistic. NOT detailed. Keep it minimal and cute like classic Love Is comics."
-        ),
-        "category": "trend",
-    },
-    "cat_phone": {
-        "label": "🐱 Котик вместо телефона",
-        "description": "Заменю телефон в руках на милого котика",
-        "prompt": (
-            "Replace the phone in the person's hand with a small fluffy kitten. "
-            "The kitten must be in the exact position and size where the phone was. "
-            "The hand should naturally hold/cradle the kitten with fingers wrapped around it. "
-            "Match the kitten's fur lighting and shadows to the original scene. "
-            "The kitten should look calm and relaxed, possibly looking at the camera. "
-            "Keep everything else exactly the same: person, face, pose, background, framing, colors, camera angle. "
-            "Remove the phone completely - no trace of it. "
-            "Photorealistic result. No style changes. No enhancements. No extra objects."
-        ),
-        "category": "trend",
-    },
-    "afro": {
-        "label": "🦱 Афро",
-        "description": "Добавлю пышную афро-причёску",
-        "prompt": (
-            "Change the person's haircut to a big voluminous afro hairstyle. "
-            "Keep the face and everything else the same."
-        ),
-        "category": "style",
-    },
-    "mullet": {
-        "label": "🥸 Маллет и усы",
-        "description": "Добавлю причёску маллет и усы",
-        "prompt": (
-            "Give the person a mullet haircut and a mustache. "
-            "Keep everything else the same."
-        ),
-        "category": "style",
-    },
-}
+BASE_DIR = os.path.dirname(__file__)
+
+
+def load_yaml_config() -> tuple[dict, dict]:
+    """Load effects and categories from effects.yaml.
+
+    Auto-resolves:
+      - prompts/{effect_id}.txt  → effect["prompt"]
+      - images/{effect_id}.jpg   → effect["example_image"]
+    Categories support parent field for nesting.
+    """
+    yaml_path = os.path.join(BASE_DIR, "effects.yaml")
+    with open(yaml_path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+
+    # Load categories (filter enabled, sort by order)
+    categories = {}
+    for cat_id, cat in data.get("categories", {}).items():
+        if cat.get("enabled", True):
+            categories[cat_id] = cat
+    categories = dict(sorted(categories.items(), key=lambda x: x[1].get("order", 999)))
+
+    # Load effects (filter enabled, auto-resolve files, sort by order)
+    effects = {}
+    for effect_id, effect in data.get("effects", {}).items():
+        if effect.get("enabled", True):
+            # Auto-resolve prompt from prompts/{effect_id}.txt
+            if "prompt" not in effect:
+                prompt_path = os.path.join(BASE_DIR, "prompts", f"{effect_id}.txt")
+                if os.path.exists(prompt_path):
+                    with open(prompt_path, "r", encoding="utf-8") as f:
+                        effect["prompt"] = f.read().strip()
+                else:
+                    logger.error(f"Prompt file not found, skipping effect: {prompt_path}")
+                    continue
+            # Auto-resolve example image from images/{effect_id}.jpg
+            if "example_image" not in effect:
+                for ext in ("jpg", "png", "webp"):
+                    img_path = os.path.join(BASE_DIR, "images", f"{effect_id}.{ext}")
+                    if os.path.exists(img_path):
+                        effect["example_image"] = img_path
+                        break
+            effects[effect_id] = effect
+    effects = dict(sorted(effects.items(), key=lambda x: x[1].get("order", 999)))
+
+    return categories, effects
+
+
+def get_subcategories(parent_id: str | None) -> dict:
+    """Get child categories of a parent (None = top-level)."""
+    return {
+        k: v for k, v in CATEGORIES.items()
+        if v.get("parent") == parent_id
+    }
+
+
+def get_effects_for(category_id: str | None) -> dict:
+    """Get effects directly in a category (None = top-level / no category)."""
+    return {
+        k: v for k, v in TRANSFORMATIONS.items()
+        if v.get("category") == category_id
+    }
+
+
+CATEGORIES, TRANSFORMATIONS = load_yaml_config()
+logger.info(f"Loaded categories: {list(CATEGORIES.keys())}")
+logger.info(f"Loaded effects: {list(TRANSFORMATIONS.keys())}")
 
 # ── Pricing (RUB, in kopecks for Telegram) ───────────────────────────────────
 
@@ -121,9 +139,7 @@ PROMO_AMOUNTS = [10, 25, 50, 100]
 
 (
     MAIN_MENU,
-    CHOOSING_CATEGORY,
-    CHOOSING_TREND,
-    CHOOSING_STYLE,
+    BROWSING,
     WAITING_PHOTO,
     STORE,
     WAITING_PAYMENT,
@@ -133,18 +149,13 @@ PROMO_AMOUNTS = [10, 25, 50, 100]
     ADMIN_MENU,
     ADMIN_STATS,
     ADMIN_PROMO,
-) = range(13)
+) = range(11)
 
 # ── Gemini client ────────────────────────────────────────────────────────────
 
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 
 # ── Helper functions ─────────────────────────────────────────────────────────
-
-
-def get_effects_by_category(category: str) -> dict:
-    """Get all effects in a category."""
-    return {k: v for k, v in TRANSFORMATIONS.items() if v.get("category") == category}
 
 
 def reply_keyboard() -> ReplyKeyboardMarkup:
@@ -246,15 +257,40 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 # ── Reply Keyboard Handlers ─────────────────────────────────────────────────
 
 
+def build_browse_keyboard(category_id: str | None) -> tuple[str, InlineKeyboardMarkup]:
+    """Build keyboard showing subcategories + effects for a category.
+
+    category_id=None → top-level (the "Create" screen).
+    Returns (title_text, keyboard).
+    """
+    buttons = []
+
+    # Subcategories
+    for cat_id, cat in get_subcategories(category_id).items():
+        buttons.append([InlineKeyboardButton(cat["label"], callback_data=f"cat_{cat_id}")])
+
+    # Effects at this level
+    for eff_id, eff in get_effects_for(category_id).items():
+        buttons.append([InlineKeyboardButton(eff["label"], callback_data=f"effect_{eff_id}")])
+
+    # Back button
+    if category_id is None:
+        buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+        title = "Выбери категорию:"
+    else:
+        parent = CATEGORIES.get(category_id, {}).get("parent")
+        back_data = f"cat_{parent}" if parent else "browse_root"
+        buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data=back_data)])
+        title = CATEGORIES.get(category_id, {}).get("label", "Выбери:")
+
+    return title, InlineKeyboardMarkup(buttons)
+
+
 async def handle_reply_create(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle '✨ Создать магию' from reply keyboard."""
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔥 Тренды", callback_data="cat_trend")],
-        [InlineKeyboardButton("💇 Меняем стиль", callback_data="cat_style")],
-        [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
-    ])
-    await update.message.reply_text("Выбери категорию:", reply_markup=keyboard)
-    return CHOOSING_CATEGORY
+    title, keyboard = build_browse_keyboard(None)
+    await update.message.reply_text(title, reply_markup=keyboard)
+    return BROWSING
 
 
 async def handle_reply_store(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -295,60 +331,23 @@ async def handle_reply_referral(update: Update, context: ContextTypes.DEFAULT_TY
 # ── Create Magic Flow ────────────────────────────────────────────────────────
 
 
-async def show_categories(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Show effect categories."""
+async def show_browse_root(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show top-level browse screen (from inline menu)."""
     query = update.callback_query
     await query.answer()
-
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔥 Тренды", callback_data="cat_trend")],
-        [InlineKeyboardButton("💇 Меняем стиль", callback_data="cat_style")],
-        [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
-    ])
-
-    await query.edit_message_text(
-        "Выбери категорию:",
-        reply_markup=keyboard,
-    )
-    return CHOOSING_CATEGORY
+    title, keyboard = build_browse_keyboard(None)
+    await query.edit_message_text(title, reply_markup=keyboard)
+    return BROWSING
 
 
-async def show_trends(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Show trend effects."""
+async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Navigate into a category/subcategory — generic handler for any depth."""
     query = update.callback_query
     await query.answer()
-
-    effects = get_effects_by_category("trend")
-    buttons = [
-        [InlineKeyboardButton(v["label"], callback_data=f"effect_{k}")]
-        for k, v in effects.items()
-    ]
-    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
-
-    await query.edit_message_text(
-        "🔥 Тренды",
-        reply_markup=InlineKeyboardMarkup(buttons),
-    )
-    return CHOOSING_TREND
-
-
-async def show_styles(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Show style effects."""
-    query = update.callback_query
-    await query.answer()
-
-    effects = get_effects_by_category("style")
-    buttons = [
-        [InlineKeyboardButton(v["label"], callback_data=f"effect_{k}")]
-        for k, v in effects.items()
-    ]
-    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
-
-    await query.edit_message_text(
-        "💇 Меняем стиль",
-        reply_markup=InlineKeyboardMarkup(buttons),
-    )
-    return CHOOSING_STYLE
+    category_id = query.data.replace("cat_", "")
+    title, keyboard = build_browse_keyboard(category_id)
+    await query.edit_message_text(title, reply_markup=keyboard)
+    return BROWSING
 
 
 async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -386,10 +385,9 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         [InlineKeyboardButton("❌ Отмена", callback_data="back_to_main")],
     ])
 
-    await query.edit_message_text(
-        f"{effect['label']}\n\n{effect['description']}\n\nОтправь мне фото для обработки.",
-        reply_markup=keyboard,
-    )
+    tips = effect.get('tips', '')
+    message = f"{effect['label']}\n\n{tips}\nОтправь мне фото для обработки."
+    await query.edit_message_text(message, reply_markup=keyboard)
     return WAITING_PHOTO
 
 
@@ -898,7 +896,7 @@ def main() -> None:
         states={
             MAIN_MENU: [
                 # Inline keyboard handlers
-                CallbackQueryHandler(show_categories, pattern="^menu_create$"),
+                CallbackQueryHandler(show_browse_root, pattern="^menu_create$"),
                 CallbackQueryHandler(show_store, pattern="^menu_store$"),
                 CallbackQueryHandler(show_promo_input, pattern="^menu_promo$"),
                 CallbackQueryHandler(show_referral, pattern="^menu_referral$"),
@@ -913,16 +911,9 @@ def main() -> None:
                 MessageHandler(filters.Regex("^👥 Пригласить друга$"), handle_reply_referral),
                 MessageHandler(filters.Regex("^ℹ️ О проекте$"), show_about_from_text),
             ],
-            CHOOSING_CATEGORY: [
-                CallbackQueryHandler(show_trends, pattern="^cat_trend$"),
-                CallbackQueryHandler(show_styles, pattern="^cat_style$"),
-                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
-            ],
-            CHOOSING_TREND: [
-                CallbackQueryHandler(select_effect, pattern="^effect_"),
-                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
-            ],
-            CHOOSING_STYLE: [
+            BROWSING: [
+                CallbackQueryHandler(show_browse_root, pattern="^browse_root$"),
+                CallbackQueryHandler(browse_category, pattern="^cat_"),
                 CallbackQueryHandler(select_effect, pattern="^effect_"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
