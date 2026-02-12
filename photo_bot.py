@@ -40,7 +40,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
-YOOMONEY_PROVIDER_TOKEN = os.environ["YOOMONEY_PROVIDER_TOKEN"]
+YOOMONEY_PROVIDER_TOKEN = os.environ.get("YOOMONEY_PROVIDER_TOKEN", "")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", 0))
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "your_bot")
 SUPPORT_USERNAME = os.environ.get("SUPPORT_USERNAME", "")  # Support account for "О проекте"
