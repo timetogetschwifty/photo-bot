@@ -45,6 +45,12 @@ ADMIN_ID = int(os.environ.get("ADMIN_ID", 0))
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "your_bot")
 SUPPORT_USERNAME = os.environ.get("SUPPORT_USERNAME", "")  # Support account for "О проекте"
 
+# Debug: Check if YooMoney token is loaded
+print(f"DEBUG: YooMoney token loaded: {bool(YOOMONEY_PROVIDER_TOKEN)}")
+print(f"DEBUG: YooMoney token length: {len(YOOMONEY_PROVIDER_TOKEN)}")
+if YOOMONEY_PROVIDER_TOKEN:
+    print(f"DEBUG: YooMoney token starts with: {YOOMONEY_PROVIDER_TOKEN[:10]}...")
+
 GEMINI_MODEL = "gemini-3-pro-image-preview"
 
 logging.basicConfig(
