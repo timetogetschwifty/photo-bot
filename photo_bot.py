@@ -127,10 +127,10 @@ logger.info(f"Loaded effects: {list(TRANSFORMATIONS.keys())}")
 
 PACKAGES = {
     # Note: YooKassa test mode may require min 100₽. Prices in kopecks.
-    "pkg_10": {"credits": 10, "price": 9900, "label": "10 фото — 99 ₽"},
-    "pkg_25": {"credits": 25, "price": 22900, "label": "25 фото — 229 ₽"},
-    "pkg_50": {"credits": 50, "price": 39900, "label": "50 фото — 399 ₽"},
-    "pkg_100": {"credits": 100, "price": 69900, "label": "100 фото — 699 ₽"},
+    "pkg_10": {"credits": 10, "price": 9900, "label": "10 зарядов — 99 ₽"},
+    "pkg_25": {"credits": 25, "price": 22900, "label": "25 зарядов — 229 ₽"},
+    "pkg_50": {"credits": 50, "price": 39900, "label": "50 зарядов — 399 ₽"},
+    "pkg_100": {"credits": 100, "price": 69900, "label": "100 зарядов — 699 ₽"},
 }
 
 PROMO_AMOUNTS = [10, 25, 50, 100]
@@ -182,9 +182,9 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
 
 
 def back_to_main_keyboard() -> InlineKeyboardMarkup:
-    """Keyboard with just 'В начало' button."""
+    """Keyboard with just 'Назад' button."""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🏠 В начало", callback_data="back_to_main")],
+        [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
     ])
 
 
@@ -218,7 +218,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     # Send reply keyboard (persistent) + inline menu
     await update.message.reply_text(
-        f"Привет, {name}!\n💰 Баланс: {credits} фото",
+        f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇",
         reply_markup=reply_keyboard(),
     )
     return MAIN_MENU
@@ -234,30 +234,25 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     credits = db_user["credits"] if db_user else 0
     name = user.first_name or "друг"
 
-    text = f"Привет, {name}!\n💰 Баланс: {credits} фото"
+    text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
 
     # Check if message has photo (can't edit photo messages to text)
     if query.message.photo:
         await query.message.delete()
-        await context.bot.send_message(
-            chat_id=user.id,
-            text=text,
-            reply_markup=reply_keyboard(),
-        )
     else:
         await query.edit_message_text(text)
-        await context.bot.send_message(
-            chat_id=user.id,
-            text="Выбери действие:",
-            reply_markup=reply_keyboard(),
-        )
+    await context.bot.send_message(
+        chat_id=user.id,
+        text=text,
+        reply_markup=reply_keyboard(),
+    )
     return MAIN_MENU
 
 
 # ── Reply Keyboard Handlers ─────────────────────────────────────────────────
 
 
-def build_browse_keyboard(category_id: str | None) -> tuple[str, InlineKeyboardMarkup]:
+def build_browse_keyboard(category_id: str | None, credits: int) -> tuple[str, InlineKeyboardMarkup]:
     """Build keyboard showing subcategories + effects for a category.
 
     category_id=None → top-level (the "Create" screen).
@@ -265,30 +260,35 @@ def build_browse_keyboard(category_id: str | None) -> tuple[str, InlineKeyboardM
     """
     buttons = []
 
-    # Subcategories
-    for cat_id, cat in get_subcategories(category_id).items():
-        buttons.append([InlineKeyboardButton(cat["label"], callback_data=f"cat_{cat_id}")])
-
     # Effects at this level
     for eff_id, eff in get_effects_for(category_id).items():
         buttons.append([InlineKeyboardButton(eff["label"], callback_data=f"effect_{eff_id}")])
 
+    # Subcategories
+    for cat_id, cat in get_subcategories(category_id).items():
+        buttons.append([InlineKeyboardButton(cat["label"], callback_data=f"cat_{cat_id}")])
+
     # Back button
     if category_id is None:
-        buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
-        title = "Выбери категорию:"
+        buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")])
+        title = f"⚡ Доступно зарядов: {credits}\nВыбери категорию:"
     else:
         parent = CATEGORIES.get(category_id, {}).get("parent")
         back_data = f"cat_{parent}" if parent else "browse_root"
         buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data=back_data)])
-        title = CATEGORIES.get(category_id, {}).get("label", "Выбери:")
+        category_label = CATEGORIES.get(category_id, {}).get("label", "Выбери:")
+        title = f"⚡ Доступно зарядов: {credits}\n{category_label}"
 
     return title, InlineKeyboardMarkup(buttons)
 
 
 async def handle_reply_create(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle '✨ Создать магию' from reply keyboard."""
-    title, keyboard = build_browse_keyboard(None)
+    user = update.effective_user
+    db_user = db.get_user(user.id)
+    credits = db_user["credits"] if db_user else 0
+
+    title, keyboard = build_browse_keyboard(None, credits)
     await update.message.reply_text(title, reply_markup=keyboard)
     return BROWSING
 
@@ -299,7 +299,7 @@ async def handle_reply_store(update: Update, context: ContextTypes.DEFAULT_TYPE)
         [InlineKeyboardButton(pkg["label"], callback_data=f"buy_{key}")]
         for key, pkg in PACKAGES.items()
     ]
-    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+    buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")])
     await update.message.reply_text("Выбери пакет:", reply_markup=InlineKeyboardMarkup(buttons))
     return STORE
 
@@ -309,7 +309,7 @@ async def handle_reply_promo(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text(
         "Введи промокод:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
         ]),
     )
     return PROMO_INPUT
@@ -320,9 +320,9 @@ async def handle_reply_referral(update: Update, context: ContextTypes.DEFAULT_TY
     user = update.effective_user
     ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
     await update.message.reply_text(
-        f"Приглашай друзей и получай\n+3 фото за каждого!\n\nТвоя ссылка:\n{ref_link}",
+        f"Приглашай друзей и получай\n+3 заряда за каждого!\n\nТвоя ссылка:\n{ref_link}",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
         ]),
     )
     return REFERRAL
@@ -335,7 +335,11 @@ async def show_browse_root(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     """Show top-level browse screen (from inline menu)."""
     query = update.callback_query
     await query.answer()
-    title, keyboard = build_browse_keyboard(None)
+    user = update.effective_user
+    db_user = db.get_user(user.id)
+    credits = db_user["credits"] if db_user else 0
+
+    title, keyboard = build_browse_keyboard(None, credits)
     await query.edit_message_text(title, reply_markup=keyboard)
     return BROWSING
 
@@ -344,8 +348,12 @@ async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     """Navigate into a category/subcategory — generic handler for any depth."""
     query = update.callback_query
     await query.answer()
+    user = update.effective_user
+    db_user = db.get_user(user.id)
+    credits = db_user["credits"] if db_user else 0
+
     category_id = query.data.replace("cat_", "")
-    title, keyboard = build_browse_keyboard(category_id)
+    title, keyboard = build_browse_keyboard(category_id, credits)
     await query.edit_message_text(title, reply_markup=keyboard)
     return BROWSING
 
@@ -369,10 +377,10 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("💳 Пополнить запасы", callback_data="menu_store")],
             [InlineKeyboardButton("👥 Пригласить друга", callback_data="menu_referral")],
-            [InlineKeyboardButton("🏠 В начало", callback_data="back_to_main")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
         ])
         await query.edit_message_text(
-            "❌ У тебя закончились фото",
+            "❌ У тебя закончились заряды",
             reply_markup=keyboard,
         )
         return MAIN_MENU
@@ -382,12 +390,28 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     effect = TRANSFORMATIONS[effect_id]
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("❌ Отмена", callback_data="back_to_main")],
+        [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
     ])
 
-    tips = effect.get('tips', '')
-    message = f"{effect['label']}\n\n{tips}\nОтправь мне фото для обработки."
-    await query.edit_message_text(message, reply_markup=keyboard)
+    tips = (effect.get('tips') or '').strip()
+    parts = []
+    if tips:
+        parts.append(tips)
+    parts.append("Отправь мне фото для обработки 👇")
+    message = "\n\n".join(parts)
+
+    example_image = effect.get("example_image")
+    if example_image and os.path.exists(example_image):
+        await query.delete_message()
+        with open(example_image, "rb") as img:
+            await context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo=img,
+                caption=message,
+                reply_markup=keyboard,
+            )
+    else:
+        await query.edit_message_text(message, reply_markup=keyboard)
     return WAITING_PHOTO
 
 
@@ -406,7 +430,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     # Deduct credit
     if not db.deduct_credit(user.id):
         await update.message.reply_text(
-            "❌ У тебя закончились фото",
+            "❌ У тебя закончились заряды",
             reply_markup=back_to_main_keyboard(),
         )
         return MAIN_MENU
@@ -455,7 +479,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔄 Попробовать снова", callback_data=f"effect_{effect_id}")],
-                [InlineKeyboardButton("🏠 В начало", callback_data="back_to_main")],
+                [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
             ])
             await status_msg.edit_text(msg, reply_markup=keyboard)
             return MAIN_MENU
@@ -481,7 +505,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         await status_msg.delete()
         await update.message.reply_photo(
             photo=output_buffer,
-            caption=f"✅ {effect['label']}\n💰 Осталось: {remaining} фото",
+            caption=f"✅ {effect['label']}\n⚡ Осталось зарядов: {remaining}",
             reply_markup=back_to_main_keyboard(),
         )
 
@@ -492,7 +516,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("🔄 Попробовать снова", callback_data=f"effect_{effect_id}")],
-            [InlineKeyboardButton("🏠 В начало", callback_data="back_to_main")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
         ])
         await status_msg.edit_text(
             f"❌ Что-то пошло не так\n\nКредит возвращён на баланс.\n\nОшибка: {str(e)[:100]}",
@@ -509,7 +533,7 @@ async def photo_expected(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await update.message.reply_text(
         "Пожалуйста, отправь фото.",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("❌ Отмена", callback_data="back_to_main")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
         ]),
     )
     return WAITING_PHOTO
@@ -527,7 +551,7 @@ async def show_store(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         [InlineKeyboardButton(pkg["label"], callback_data=f"buy_{key}")]
         for key, pkg in PACKAGES.items()
     ]
-    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+    buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")])
 
     await query.edit_message_text(
         "Выбери пакет:",
@@ -556,11 +580,11 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         # Send invoice
         await context.bot.send_invoice(
             chat_id=update.effective_chat.id,
-            title=f"Пакет {package['credits']} фото",
-            description=f"Пополнение баланса на {package['credits']} фото",
+            title=f"Пакет {package['credits']} зарядов",
+            description=f"Пополнение баланса на {package['credits']} зарядов",
             payload=f"package_{package_id}_{update.effective_user.id}",
             currency="RUB",
-            prices=[LabeledPrice(f"{package['credits']} фото", package["price"])],
+            prices=[LabeledPrice(f"{package['credits']} зарядов", package["price"])],
             provider_token=YOOMONEY_PROVIDER_TOKEN,
         )
 
@@ -569,7 +593,7 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
             chat_id=update.effective_chat.id,
             text="Нажми кнопку ниже, чтобы отменить покупку:",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("❌ Отмена", callback_data="cancel_payment")]
+                [InlineKeyboardButton("⬅️ Назад", callback_data="cancel_payment")]
             ]),
         )
         return WAITING_PAYMENT
@@ -600,7 +624,7 @@ async def show_main_menu_fresh(update: Update, context: ContextTypes.DEFAULT_TYP
     name = user.first_name or "друг"
     await context.bot.send_message(
         chat_id=user.id,
-        text=f"Привет, {name}!\n💰 Баланс: {credits} фото",
+        text=f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇",
         reply_markup=main_menu_keyboard(),
     )
     return MAIN_MENU
@@ -627,7 +651,7 @@ async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE)
         db.record_purchase(user.id, credits, price_rub)
 
         await update.message.reply_text(
-            f"✅ Оплата прошла!\n+{credits} фото добавлено\n\n💰 Баланс: {new_balance} фото",
+            f"✅ Оплата прошла!\n+{credits} зарядов добавлено\n\n⚡ Доступно зарядов: {new_balance}",
             reply_markup=back_to_main_keyboard(),
         )
     else:
@@ -650,7 +674,7 @@ async def show_promo_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     await query.edit_message_text(
         "Введи промокод:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
         ]),
     )
     return PROMO_INPUT
@@ -667,7 +691,7 @@ async def handle_promo_code(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         db_user = db.get_user(user.id)
         new_balance = db_user["credits"] if db_user else 0
         await update.message.reply_text(
-            f"✅ Промокод активирован!\n+{credits} фото добавлено\n\n💰 Баланс: {new_balance} фото",
+            f"✅ Промокод активирован!\n+{credits} зарядов добавлено\n\n⚡ Доступно зарядов: {new_balance}",
             reply_markup=back_to_main_keyboard(),
         )
     else:
@@ -675,7 +699,7 @@ async def handle_promo_code(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             f"❌ {message}",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔄 Попробовать другой", callback_data="menu_promo")],
-                [InlineKeyboardButton("🏠 В начало", callback_data="back_to_main")],
+                [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
             ]),
         )
 
@@ -695,9 +719,9 @@ async def show_referral(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     # TODO: Telegram share button requires inline mode, showing link as text for now
     await query.edit_message_text(
-        f"Приглашай друзей и получай\n+3 фото за каждого!\n\nТвоя ссылка:\n{ref_link}",
+        f"Приглашай друзей и получай\n+3 заряда за каждого!\n\nТвоя ссылка:\n{ref_link}",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
         ]),
     )
     return REFERRAL
@@ -724,7 +748,7 @@ async def show_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     buttons = []
     if SUPPORT_USERNAME:
         buttons.append([InlineKeyboardButton("✉️ Написать в поддержку", url=f"https://t.me/{SUPPORT_USERNAME}")])
-    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+    buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")])
 
     await query.edit_message_text(
         text,
@@ -748,7 +772,7 @@ async def show_about_from_text(update: Update, context: ContextTypes.DEFAULT_TYP
     buttons = []
     if SUPPORT_USERNAME:
         buttons.append([InlineKeyboardButton("✉️ Написать в поддержку", url=f"https://t.me/{SUPPORT_USERNAME}")])
-    buttons.append([InlineKeyboardButton("⬅️ В начало", callback_data="back_to_main")])
+    buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")])
 
     await update.message.reply_text(
         text,
@@ -805,7 +829,7 @@ async def show_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     for pkg_id, pkg in PACKAGES.items():
         credits = pkg["credits"]
         pkg_data = package_stats.get(credits, {"count": 0, "revenue": 0})
-        package_lines.append(f"{credits} фото: {pkg_data['count']} шт. ({pkg_data['revenue']} ₽)")
+        package_lines.append(f"{credits} зарядов: {pkg_data['count']} шт. ({pkg_data['revenue']} ₽)")
 
     packages_text = "\n".join(package_lines)
 
@@ -834,13 +858,13 @@ async def show_admin_promo(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     await query.answer()
 
     buttons = [
-        [InlineKeyboardButton(f"{amount} фото", callback_data=f"create_promo_{amount}")]
+        [InlineKeyboardButton(f"{amount} зарядов", callback_data=f"create_promo_{amount}")]
         for amount in PROMO_AMOUNTS
     ]
     buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")])
 
     await query.edit_message_text(
-        "🎁 Создать промокод\n\nСколько фото даёт промокод?",
+        "🎁 Создать промокод\n\nСколько зарядов даёт промокод?",
         reply_markup=InlineKeyboardMarkup(buttons),
     )
     return ADMIN_PROMO
@@ -855,7 +879,7 @@ async def create_promo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     code = db.create_promo_code(credits=amount, max_uses=1)
 
     await query.edit_message_text(
-        f"✅ Промокод создан!\n\nКод: {code}\nДаёт: +{amount} фото",
+        f"✅ Промокод создан!\n\nКод: {code}\nДаёт: +{amount} зарядов",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🎁 Создать ещё", callback_data="admin_promo")],
             [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
@@ -887,6 +911,15 @@ def main() -> None:
     """Start the bot."""
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
+    # Reply keyboard handlers — shared across all user-facing states
+    reply_kb = [
+        MessageHandler(filters.Regex("^✨ Создать магию$"), handle_reply_create),
+        MessageHandler(filters.Regex("^💳 Пополнить запасы$"), handle_reply_store),
+        MessageHandler(filters.Regex("^🎁 Промокод$"), handle_reply_promo),
+        MessageHandler(filters.Regex("^👥 Пригласить друга$"), handle_reply_referral),
+        MessageHandler(filters.Regex("^ℹ️ О проекте$"), show_about_from_text),
+    ]
+
     # Main conversation handler
     conv_handler = ConversationHandler(
         entry_points=[
@@ -904,43 +937,38 @@ def main() -> None:
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
                 # Effect retry
                 CallbackQueryHandler(select_effect, pattern="^effect_"),
-                # Reply keyboard handlers
-                MessageHandler(filters.Regex("^✨ Создать магию$"), handle_reply_create),
-                MessageHandler(filters.Regex("^💳 Пополнить запасы$"), handle_reply_store),
-                MessageHandler(filters.Regex("^🎁 Промокод$"), handle_reply_promo),
-                MessageHandler(filters.Regex("^👥 Пригласить друга$"), handle_reply_referral),
-                MessageHandler(filters.Regex("^ℹ️ О проекте$"), show_about_from_text),
-            ],
+            ] + reply_kb,
             BROWSING: [
                 CallbackQueryHandler(show_browse_root, pattern="^browse_root$"),
                 CallbackQueryHandler(browse_category, pattern="^cat_"),
                 CallbackQueryHandler(select_effect, pattern="^effect_"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
-            ],
+            ] + reply_kb,
             WAITING_PHOTO: [
                 MessageHandler(filters.PHOTO, handle_photo),
-                MessageHandler(~filters.PHOTO & ~filters.COMMAND, photo_expected),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ] + reply_kb + [
+                MessageHandler(~filters.PHOTO & ~filters.COMMAND, photo_expected),
             ],
             STORE: [
                 CallbackQueryHandler(buy_package, pattern="^buy_"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
-            ],
+            ] + reply_kb,
             WAITING_PAYMENT: [
                 MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment),
                 CallbackQueryHandler(cancel_payment, pattern="^cancel_payment$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
-            ],
-            PROMO_INPUT: [
+            ] + reply_kb,
+            PROMO_INPUT: reply_kb + [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_promo_code),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
             REFERRAL: [
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
-            ],
+            ] + reply_kb,
             ABOUT: [
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
-            ],
+            ] + reply_kb,
             ADMIN_MENU: [
                 CallbackQueryHandler(show_admin_stats, pattern="^admin_stats$"),
                 CallbackQueryHandler(show_admin_promo, pattern="^admin_promo$"),

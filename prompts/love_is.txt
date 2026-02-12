@@ -1,3 +1,151 @@
-Transform this photo into a Love Is comic style illustration.
-Keep the person recognizable but in the cute cartoon style.
-Add romantic elements typical of Love Is comics.
+Create an authentic "Love is..." greeting card illustration in the classic Kim Casali style. Based on the uploaded couple photo, create a sweet, charming couple illustration with the distinctive "Love is..." aesthetic.
+
+LAYOUT & TEXT SPECIFICATIONS (CRITICAL):
+
+Text Placement & Formatting:
+- TOP LEFT: "love is..." with RED HEART (♥) replacing the dot in the letter "i" 
+  * Should read: "love ♥s..." where the heart IS the dot above the "i"
+  * The heart should be small, red, and positioned exactly where a dot would normally be
+  * NOT "love is...♥" - the heart replaces the i-dot, not added after
+- BOTTOM CENTER: Russian text caption WITHOUT any heart symbol
+  * Format: "...объятия навсегда." (or similar Russian phrase)
+  * NO heart after the text - just the Russian phrase ending with period
+  * All text in black handwritten style
+
+Color Specifications for Text:
+- "love is..." text: BLACK
+- Heart symbol replacing i-dot: RED or PINK (♥)
+- Russian caption at bottom: BLACK
+- NO heart symbol at bottom
+
+Frame & Composition:
+- Thin black border frame around entire image (square format)
+- "love is..." at top left inside frame
+- Illustration centered in middle
+- Russian text caption at bottom center
+- Clean, professional greeting card layout
+
+AUTHENTIC "LOVE IS..." STYLE CHARACTERISTICS:
+
+Character Proportions:
+- Large round heads with cute, expressive faces
+- Small, compact bodies (chibi-style proportions)
+- Heads are oversized compared to bodies
+- Chubby, adorable, child-like but with personality
+- Short legs, small feet
+- Round, soft shapes throughout
+
+Facial Features (Expressive & Charming):
+- Large expressive eyes with visible pupils and white highlights
+- Eyelashes clearly drawn (especially for female character - 2-3 lashes visible)
+- Simple curved eyebrows
+- Gentle curved smile showing warmth
+- Small simple nose (tiny dot or curve)
+- Round rosy pink cheeks (circles or ovals)
+- Eyes have personality and sparkle
+- Faces show emotion and sweetness
+- Both characters looking happy and in love
+
+Hair (Based on Uploaded Photo):
+- Identify couple's hairstyles from photo
+- Male: Brown wavy/tousled hair with volume and texture
+- Female: Long dark brown/black flowing hair past shoulders
+- Show hair texture and flow with curved lines
+- Hair has volume, movement, and personality
+- Natural hair colors in illustrated style
+
+Clothing (FULLY DRESSED):
+- Both characters wear complete black outfits matching the photo
+- Male: Black shirt or jacket with buttons/details
+- Female: Black dress or top
+- Characters fully clothed in contemporary elegant/casual style
+- Include shoes (simple rounded black shapes)
+- Clothing has simple details (collars, sleeves, dress shape)
+
+Body & Limbs:
+- Arms clearly defined, wrapped around each other (hugging pose)
+- Hands with simple fingers visible
+- Legs and feet clearly shown
+- Female character: one leg slightly bent/lifted behind (cute romantic pose)
+- Round, soft, appealing body shapes
+- Small ground shadow beneath characters (simple beige/tan oval)
+
+Line Work:
+- Clean black outlines with consistent moderate thickness
+- Smooth, professional illustration quality
+- Clear visible outlines defining all shapes
+- Professional greeting card standard
+
+Pose (Based on Photo - Couple Embracing):
+- Couple hugging closely, facing forward/slightly angled toward each other
+- Both faces visible, looking happy and in love
+- Arms wrapped around each other in warm embrace
+- Female has one foot lifted behind her (classic cute romantic pose)
+- Close, affectionate, warm interaction
+- Both characters showing joy and connection
+
+Color Palette:
+- Skin tones: Light peachy-pink, warm and glowing
+- Rosy cheeks: Soft pink circles
+- Hair: Brown for male, dark brown/black for female
+- Clothing: Black throughout (matching photo)
+- Shoes: Black
+- Background: Cream/off-white base
+- Soft yellow/golden circular glow behind characters
+- Overall warm, inviting, cheerful color scheme
+
+Background:
+- Cream or off-white background
+- Soft yellow or warm pastel circle behind characters (adds warmth and glow)
+- Simple ground shadow beneath characters (light beige/tan oval)
+- Minimal but present
+- Clean, professional look
+
+Border:
+- Thin black frame around entire composition
+- Square format with rounded corners
+- Clean professional greeting card presentation
+
+Paper texture & print aging (gum insert look):
+- Render the entire greeting card as if printed on thin vintage chewing-gum insert paper: slightly crumpled surface with subtle micro-creases, soft fold marks, very light corner wear, and faint uneven paper waviness. 
+- Add gentle paper fiber texture visible under soft lighting, with mild desaturation and slightly matte ink absorption so black outlines look printed rather than digitally sharp. 
+- Include minimal printing imperfections such as tiny ink density variations and barely noticeable off-white paper aging (warm cream tint), while keeping all illustration details fully legible and clean. Avoid heavy wrinkles — the card should look lightly handled, softly crumpled, and nostalgic, not damaged.
+
+PERSONALIZATION (Based on Uploaded Photo):
+- Match couple's hair colors and styles accurately
+- Male: Brown wavy hair, friendly warm expression
+- Female: Long dark flowing hair, sweet loving expression
+- Reflect their skin tones (peachy illustration style)
+- Capture their close embrace from the photo
+- Both in elegant black clothing
+- Make it recognizably THEM in cute illustrated form
+
+CRITICAL TEXT REQUIREMENTS (MOST IMPORTANT):
+✅ "love is..." positioned at TOP LEFT
+✅ RED/PINK HEART (♥) replaces the DOT in the letter "i" - so it reads "love ♥s..."
+✅ The heart IS the i-dot, not added after the text
+✅ Bottom caption in RUSSIAN: "...объятия навсегда." (or similar phrase)
+✅ NO HEART SYMBOL at the bottom - just Russian text with period
+✅ Thin black border frame around entire image
+
+STYLE REQUIREMENTS:
+✅ Expressive eyes with eyelashes and highlights
+✅ Fully clothed in black outfits matching photo
+✅ Couple hugging with both faces visible
+✅ Female with one leg lifted (cute pose)
+✅ Rosy pink cheeks
+✅ Yellow glow behind characters
+✅ Ground shadow beneath
+✅ Professional cute illustration quality
+✅ Warm, cheerful, loving atmosphere
+
+RUSSIAN TEXT OPTIONS (Use One):
+- "...объятия навсегда." (hugs forever)
+- "...быть рядом." (being close)
+- "...твоя улыбка." (your smile)
+- "...наша любовь." (our love)
+- "...вместе навсегда." (together forever)
+
+Or create appropriate Russian phrase based on the photo context.
+
+The final image should be a professional "Love is..." greeting card with the heart properly integrated into the "love is..." text at top, and clean Russian text at bottom without any additional symbols.

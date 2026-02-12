@@ -30,13 +30,19 @@
 # ── Categories ────────────────────────────────────────────────────────────────
 
 categories:
-  trend:
+  avatar:
     enabled: false
-    order: 10
-    label: "🔥 Тренды"
+    order: 5
+    label: "📸 На аватар"
+  
+  tinder:
+    enabled: false
+    order: 1
+    label: "Фотка в Tinder"
+    parent: avatar
 
-  style:
-    enabled: true
+  linked:
+    enabled: false
     order: 1
     label: "👗 Стиль и мода"
 
@@ -49,39 +55,120 @@ categories:
 
 effects:
   love_is:
-    enabled: false
+    enabled: true
     order: 1
     label: "💌 Открытка в стиле Love is"
     tips: |
-      📸 Рекомендации:
-      • Лицо крупным планом
-      • Хорошее освещение
-      • Без очков
-    category: trend
+      Открытка для двоих в стиле легендарной жевачки
+    category:
 
   cat_phone:
     enabled: true
     order: 2
     label: "🐱 Котик вместо телефона"
-    tips: |
-      📸 Рекомендации:
-      • Держите телефон в руках
-      • Руки должны быть видны
-    category: trend
+    tips: "Преврати телефон в руке в милого котика"
+    category: 
 
   afro:
     enabled: true
-    order: 1
-    label: "🧪 Тест промпта"
-    category: style
+    order: 3
+    label: "🪮 Афро"
+    tips: |
+      Размер имеет значение
+    category: 
 
   mullet:
     enabled: true
-    order: 2
-    label: "Маллет и усы"
-    category: style
+    order: 4
+    label: "💈 Маллет и усы"
+    tips: |
+      Будь в тренде
+    category: 
 
-# ── TEMPLATE ──────────────────────────────────────────────────────────────────
+  king:
+    enabled: true
+    order: 5
+    label: "👑 Ваше Величество"
+    tips: |
+      Обычный портрет для обычного человека
+    category: 
+  
+  ny_hobo:
+    enabled: true
+    order: 6
+    label: "🗽 Переехал в Нью Йорк"
+    tips: |
+      И что-то пошло не так
+    category: 
+  
+  fashion_week:
+    enabled: true
+    order: 7
+    label: "🗼 Неделя моды"
+    tips: |
+      Для нее
+    category: 
+
+  proposal:
+    enabled: true
+    order: 8
+    label: "💍 В париже"
+    tips: |
+      Для нее
+    category: 
+
+  carpet:
+    enabled: true
+    order: 9
+    label: "📸 Вызвали на ковер"
+    tips: |
+      
+    category: 
+
+  ancestor:
+    enabled: true
+    order: 10
+    label: "🙈 Дальний родственник"
+    tips: |
+      Расскажи как тебе неудобно
+    category: 
+
+  premier:
+    enabled: true
+    order: 11
+    label: "📸 Заскочили на премьеру"
+    tips: |
+      Для нее и для него
+    category: 
+
+  director:
+    enabled: true
+    order: 12
+    label: "🎬 Камера, мотор...!"
+    tips: |
+      9-й сезон 2137 серия
+    category: 
+
+  cosmo:
+    enabled: true
+    order: 13
+    label: "🚀 Выше только звезды"
+    tips: |
+      Хьюстон, у нас проблема
+    category: 
+
+  yelling:
+    enabled: true
+    order: 14
+    label: "🐸  Только спокойствие"
+    tips: |
+      Для нее
+    category: 
+
+
+# ── TEMPLATES ─────────────────────────────────────────────────────────────────
+#
+# NEW EFFECT:
 #
 # new_effect:
 #   enabled: true
@@ -94,3 +181,16 @@ effects:
 #
 # Then create: prompts/new_effect.txt
 # Optionally:  images/new_effect.jpg
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# NEW CATEGORY:
+#
+# categories:
+#   my_category:
+#     enabled: true
+#     order: 3
+#     label: "🎭 My Category"
+#     parent:                  # ← omit or leave blank for top-level,
+#                              #    set to parent id for subcategory
+#
+# Then assign effects to it: category: my_category

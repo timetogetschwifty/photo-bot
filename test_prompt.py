@@ -29,7 +29,7 @@ GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 GEMINI_MODEL = "gemini-3-pro-image-preview"
 
 # ── Change this to switch test photo ──────────────────────────────────────────
-TEST_PHOTO = "18.jpg"
+TEST_PHOTO = "17.jpg"
 # ──────────────────────────────────────────────────────────────────────────────
 
 PROMPT_FILE = os.path.join(TESTING_DIR, "prompt.txt")
@@ -71,22 +71,32 @@ def main():
         image.thumbnail((max_side, max_side), Image.LANCZOS)
         print(f"Resized to: {image.size}")
 
+    # Configure client (timeout will be set per-request)
     client = genai.Client(api_key=GEMINI_API_KEY)
 
     print("Calling Gemini...")
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=[prompt, image],
-        config=types.GenerateContentConfig(
-            response_modalities=["Text", "Image"],
-            safety_settings=[
-                types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_ONLY_HIGH"),
-                types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_ONLY_HIGH"),
-                types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_ONLY_HIGH"),
-                types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_ONLY_HIGH"),
-            ],
-        ),
-    )
+    print("(This may take several minutes for complex image generation...)")
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=[prompt, image],
+            config=types.GenerateContentConfig(
+                response_modalities=["Text", "Image"],
+                safety_settings=[
+                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_ONLY_HIGH"),
+                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_ONLY_HIGH"),
+                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_ONLY_HIGH"),
+                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_ONLY_HIGH"),
+                ],
+            ),
+        )
+    except Exception as e:
+        print(f"Error calling Gemini API: {type(e).__name__}: {e}")
+        print(f"\nTroubleshooting tips:")
+        print(f"  - Check your internet connection")
+        print(f"  - Verify your API key in .env")
+        print(f"  - Try again in a few moments (API might be temporarily down)")
+        sys.exit(1)
 
     result_image = None
     result_text = None
