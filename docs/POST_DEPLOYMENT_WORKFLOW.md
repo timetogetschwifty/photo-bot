@@ -1,5 +1,9 @@
 # Post-Deployment Workflow Guide
 
+**For deployment configuration (environment variables, what's deployed, etc.), see:** [RAILWAY_CONFIG.md](RAILWAY_CONFIG.md)
+
+---
+
 ## 🎯 How Updates Work
 
 **Short answer:** YES! Railway automatically deploys when you push to GitHub.

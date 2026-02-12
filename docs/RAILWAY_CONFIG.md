@@ -49,49 +49,15 @@ Railway deploys everything from the repository except files in `.gitignore`:
 - **Persistence**: Railway volume (persists across deployments)
 - **Location**: `/app/bot.db` in container
 
-## Deployment Workflow
+## How to Update the Bot
 
-### Updating the Bot
+Railway auto-deploys when you push to GitHub main branch.
 
-```bash
-# 1. Make changes locally
-cd "/Users/tray/Documents/Useful/Projects/Photo bot"
+**For detailed workflow instructions, see:** [POST_DEPLOYMENT_WORKFLOW.md](POST_DEPLOYMENT_WORKFLOW.md)
 
-# 2. Test locally (optional)
-source .venv/bin/activate
-python photo_bot.py
-
-# 3. Commit and push
-git add .
-git commit -m "Description of changes"
-git push origin main
-
-# 4. Railway auto-deploys (2-3 minutes)
-```
-
-### Checking Deployment Status
-
-1. Railway Dashboard → Your Project
-2. View "Deployments" tab
-3. Check logs for errors
-4. Test bot in Telegram
-
-### Rolling Back
-
-If deployment has issues:
-
-**Option 1: Redeploy Previous Version**
-```
-Railway Dashboard → Deployments
-Find: Last working deployment
-Click: ⋮ → Redeploy
-```
-
-**Option 2: Git Revert**
-```bash
-git revert HEAD
-git push origin main
-```
+**Quick reference:**
+- **Code changes**: `git add` → `git commit` → `git push origin main` → auto-deploys in 2-3 min
+- **Environment variables**: Update in Railway Dashboard → Variables → Apply Changes (no git needed)
 
 ## Payment Configuration
 
