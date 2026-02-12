@@ -1,21 +1,3 @@
-
-Core transformation instruction:
-Transform the person in the uploaded photo by giving them a very dense, large, natural afro hairstyle while keeping the face fully recognizable and preserving all other elements of the photo unchanged.
-
-Face:
-Maintain the exact facial identity with 1:1 accuracy — same face shape, eye spacing, nose, lips, skin tone, skin texture, and expression. No beautification, no smoothing, no reshaping. Eyes must remain naturally aligned and looking in the same direction as in the original photo.
-
-Hair:
-Replace the existing hairstyle with an extra-dense, full, voluminous natural afro haircut featuring tightly packed curls and high natural volume. The afro should have a realistic rounded silhouette with organically irregular curl clustering, subtle variation in curl size, and natural micro-stray hairs along the perimeter to avoid any artificial edge. Hairline must remain anatomically correct and consistent with the original forehead proportions. Hair color must exactly match the person’s original hair color and, if the person has a beard or facial hair, the afro color must also match the beard color for full consistency. Ensure lighting reflections, highlights, and shadows on the afro match the original scene lighting direction.
-
-Outfit:
-Keep the original clothing, accessories, and textures unchanged.
-
-Background:
-Preserve the exact original background, depth of field, perspective, and environmental lighting with no modifications.
-
-Lighting & realism:
-Ensure seamless integration with scene lighting, including realistic highlight distribution, soft shadow falloff on the face and shoulders, and subtle contact shadows where the hair overlaps the forehead, ears, and neck. Avoid halo artifacts, edge cutouts, or unnatural uniform texture.
-
-Preservation rule:
-Keep the person’s face recognizable and maintain their facial features and expression exactly as in the source image.
+===PROMPT===
+Transform this photo by replacing the existing hairstyle of every visible person with a large, stylish afro while keeping everything else exactly unchanged. Preserve the exact face likeness, facial proportions, expression, head position, body posture, clothing, accessories, background, lighting direction, depth of field, image composition, skin tone accuracy, and the number of people. The afro must be full, rounded, voluminous, and naturally textured with visible curl structure and organic density, sized proportionally to each individual’s head and distance from the camera so it feels balanced and flattering rather than exaggerated. Integrate the hairline seamlessly along the forehead and temples, blending naturally with the scalp and matching the person’s original hair color unless realism requires a subtle natural tone for bald individuals. Ensure the texture appears soft and believable, with slight natural asymmetry and depth, avoiding helmet-like shapes, over-symmetry, caricature styling, retro parody vibes, or cartoonish texture. Maintain the original image’s lighting characteristics, including shadow direction and softness, allowing realistic shadow integration around the forehead, ears, and neck. For group photos, apply an individually proportioned afro to each person without overlapping or merging hair shapes. Replace long or short hair completely without leaving visible remnants. Keep resolution, sharpness, and noise level consistent with the original image, avoiding over-sharpening, distortion of facial features, extra elements, artifacts, clipping, or flat edges so the result feels like a genuine, confident, modern haircut choice captured in a professional lifestyle portrait.
+===END PROMPT===

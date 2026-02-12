@@ -1,32 +1,3 @@
-Core transformation instruction:
-Transform the person in the uploaded photo into an iconic, highly recognizable classic 1980s “legendary mullet” look with a bold signature moustache, while keeping the face fully recognizable and preserving identity.
-
-Face:
-Maintain exact facial identity with 1:1 accuracy — same bone structure, eye spacing, nose, lips, skin tone, and expression. No beautification or reshaping. Add only subtle masculine grooming contrast through the hairstyle and moustache styling. Eyes must remain naturally aligned and looking forward.
-
-Hair (iconic mullet):
-Create a pronounced, statement-level mullet haircut:
-• Front and crown: medium-length, slightly lifted volume with natural texture
-• Sides: clearly shorter and tapered for strong contrast
-• Back: noticeably longer layered section extending to the lower neck/upper shoulders with visible feathered flow and movement
-• Texture: realistic strand separation, layered structure, soft feathering typical of classic 1980s rock mullets
-• Density: full, healthy density without helmet-like stiffness
-• Color: must exactly match the person’s natural hair color and beard color
-• Ensure realistic lighting interaction, shadows along neck and shoulders, and natural stray strands for authenticity
-
-Moustache (iconic signature):
-Upgrade the moustache into a distinctive classic thick statement moustache:
-• Fuller width extending slightly beyond mouth corners
-• Slight natural downward curvature or subtle western-style sweep
-• Realistic density with visible strand variation (not airbrushed)
-• Color must exactly match scalp hair color
-• Natural blending into the upper lip with correct soft shadow contact
-
-Outfit & background:
-Keep clothing, pose, and background unchanged.
-
-Lighting & realism:
-Ensure the new hair and moustache integrate perfectly with original lighting direction, including realistic highlight falloff, subtle shadowing under the hair mass, and natural edge blending without halo artifacts.
-
-Preservation rule:
-Keep the person’s face recognizable and maintain their facial features and expression exactly as in the source image.
+===PROMPT===
+Transform this photo by completely removing all existing facial hair and replacing it with a clean, sculpted modern moustache while converting the hairstyle into a contemporary fashion mullet. Fully eliminate any beard, stubble, goatee, chin hair, or extended sideburns and reconstruct the underlying skin with realistic texture, preserving pores, natural tonal variation, and subtle post-shave softness without blur patches, smudging, or artificial smoothness. Maintain the exact facial likeness, jawline shape, cheek structure, skin tone, expression, lighting, shadows, camera angle, framing, clothing, accessories, background, body proportions, and number of people in the image. Add a well-groomed modern moustache with natural density and clean edges, slightly refined with a subtle retro influence but not exaggerated, no handlebar styling and no comedic or vintage 1800s appearance, ensuring it matches the hair color and integrates seamlessly with upper lip lighting and shadow. Convert the hairstyle into a 2023–2025 modern mullet with a textured top, soft fade or clean taper on the sides, visible above medium length in the back, and natural blending at the temples and nape, respecting the subject’s original hair texture and color with realistic volume and strand detail. Ensure photorealistic skin reconstruction under previously bearded areas, accurate shadow continuity, no halo effects, no edge artifacts, no distortion of facial features, no extra elements, and a seamless high-resolution finish that looks like a professional barbershop makeover photographed in real life.
+===END PROMPT===
