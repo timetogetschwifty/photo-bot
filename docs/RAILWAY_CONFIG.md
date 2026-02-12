@@ -19,8 +19,8 @@ Set these in Railway Dashboard → Variables:
 | `GEMINI_API_KEY` | Google Gemini API key | `AIzaSy...` |
 | `YOOMONEY_PROVIDER_TOKEN` | YooMoney payment provider token | `381764678:TEST:...` (TEST) or `381764678:LIVE:...` (production) |
 | `ADMIN_ID` | Telegram user ID of admin | `280191018` |
-| `BOT_USERNAME` | Bot username (for referral links) | `@top_ai_photo_bot` |
-| `SUPPORT_USERNAME` | Support contact (shown in "О проекте") | `dude@dude.com` |
+| `BOT_USERNAME` | Bot username WITHOUT @ (for referral links https://t.me/{value}) | `top_ai_photo_bot` |
+| `SUPPORT_USERNAME` | Support Telegram username WITHOUT @ | `your_support_account` |
 
 ## Files Deployed to Railway
 
@@ -40,14 +40,14 @@ Railway deploys everything from the repository except files in `.gitignore`:
 - `__pycache__/` - Python cache
 - `*.pyc` - Compiled Python files
 - `.DS_Store` - macOS system files
-- `bot.db` - Local SQLite database
+- `photo_bot.db` - Local SQLite database
 
 ## Database
 
 - **Type**: SQLite
-- **File**: `bot.db` (created automatically on Railway)
+- **File**: `photo_bot.db` (created automatically on Railway)
 - **Persistence**: Railway volume (persists across deployments)
-- **Location**: `/app/bot.db` in container
+- **Location**: `/app/photo_bot.db` in container
 
 ## How to Update the Bot
 
@@ -63,7 +63,7 @@ Railway auto-deploys when you push to GitHub main branch.
 
 ### Current: YooMoney (TEST mode)
 
-- Token: `381764678:TEST:164315`
+- Token: `381764678:TEST:xxxxx` (redacted for security)
 - Mode: Test payments only (no real money)
 - Status: ✅ Working
 

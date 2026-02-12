@@ -78,12 +78,16 @@ nano effects.yaml
 
 ```yaml
 pirate:
-  name: "Pirate 🏴‍☠️"
-  description: "Arr! Transform into a fearsome pirate captain"
-  prompt_file: "pirate.txt"
-  image_file: "pirate.png"
+  enabled: true
+  order: 10
+  label: "🏴‍☠️ Pirate Captain"
+  tips: "Transform into a fearsome pirate captain from the Golden Age"
   category: "historical"
 ```
+
+**Note:** Files are auto-resolved by effect ID:
+- Prompt: `prompts/pirate.txt` (required)
+- Image: `images/pirate.jpg` or `.png` (optional)
 
 **Save:** `Ctrl+X`, then `Y`, then `Enter`
 
@@ -426,13 +430,16 @@ nano effects.yaml
 
 # Add all three effects:
 # pirate:
-#   name: "Pirate 🏴‍☠️"
+#   enabled: true
+#   label: "🏴‍☠️ Pirate Captain"
 #   ...
 # ninja:
-#   name: "Ninja 🥷"
+#   enabled: true
+#   label: "🥷 Ninja Warrior"
 #   ...
 # astronaut:
-#   name: "Astronaut 🚀"
+#   enabled: true
+#   label: "🚀 Astronaut"
 #   ...
 
 # 5. Test one locally (optional)
