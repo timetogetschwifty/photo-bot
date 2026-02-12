@@ -249,6 +249,31 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     return MAIN_MENU
 
 
+async def restart_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle restart button (callback version of /start)."""
+    query = update.callback_query
+    await query.answer()
+
+    user = update.effective_user
+    db_user = db.get_user(user.id)
+    credits = db_user["credits"] if db_user else 0
+    name = user.first_name or "друг"
+
+    # Clear any stale user data
+    context.user_data.clear()
+
+    text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
+
+    # Delete old message and send fresh one
+    await query.message.delete()
+    await context.bot.send_message(
+        chat_id=user.id,
+        text=text,
+        reply_markup=reply_keyboard(),
+    )
+    return MAIN_MENU
+
+
 # ── Reply Keyboard Handlers ─────────────────────────────────────────────────
 
 
@@ -287,6 +312,9 @@ async def handle_reply_create(update: Update, context: ContextTypes.DEFAULT_TYPE
     user = update.effective_user
     db_user = db.get_user(user.id)
     credits = db_user["credits"] if db_user else 0
+
+    # Track current browsing category (None = top level)
+    context.user_data['current_category'] = None
 
     title, keyboard = build_browse_keyboard(None, credits)
     await update.message.reply_text(title, reply_markup=keyboard)
@@ -339,6 +367,9 @@ async def show_browse_root(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     db_user = db.get_user(user.id)
     credits = db_user["credits"] if db_user else 0
 
+    # Track current browsing category (None = top level)
+    context.user_data['current_category'] = None
+
     title, keyboard = build_browse_keyboard(None, credits)
     await query.edit_message_text(title, reply_markup=keyboard)
     return BROWSING
@@ -353,6 +384,20 @@ async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     credits = db_user["credits"] if db_user else 0
 
     category_id = query.data.replace("cat_", "")
+
+    # Validate category exists
+    if category_id and category_id not in CATEGORIES:
+        await query.edit_message_text(
+            "❌ Категория не найдена\n\nНажми кнопку ниже, чтобы начать заново:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Начать заново", callback_data="restart")],
+            ]),
+        )
+        return MAIN_MENU
+
+    # Track current browsing category
+    context.user_data['current_category'] = category_id
+
     title, keyboard = build_browse_keyboard(category_id, credits)
     await query.edit_message_text(title, reply_markup=keyboard)
     return BROWSING
@@ -374,23 +419,32 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     # Check credits
     if credits < 1:
+        # Store category before showing error
+        current_category = context.user_data.get('current_category')
+        back_callback = f"cat_{current_category}" if current_category else "browse_root"
+
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("💳 Пополнить запасы", callback_data="menu_store")],
             [InlineKeyboardButton("👥 Пригласить друга", callback_data="menu_referral")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
         ])
         await query.edit_message_text(
             "❌ У тебя закончились заряды",
             reply_markup=keyboard,
         )
-        return MAIN_MENU
+        return BROWSING
 
-    # Store selected effect
+    # Store selected effect and remember which category we came from
     context.user_data["effect_id"] = effect_id
+    context.user_data["previous_category"] = context.user_data.get('current_category')
 
     effect = TRANSFORMATIONS[effect_id]
+
+    # Build back button that returns to the category we came from
+    previous_category = context.user_data.get("previous_category")
+    back_callback = f"cat_{previous_category}" if previous_category else "browse_root"
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
+        [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
     ])
 
     tips = (effect.get('tips') or '').strip()
@@ -419,9 +473,12 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     """Receive photo and process it."""
     effect_id = context.user_data.get("effect_id")
     if not effect_id or effect_id not in TRANSFORMATIONS:
+        # Session lost - offer restart
         await update.message.reply_text(
-            "Что-то пошло не так. Используй /start",
-            reply_markup=back_to_main_keyboard(),
+            "❌ Сессия истекла\n\nНажми кнопку ниже, чтобы начать заново:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Начать заново", callback_data="restart")],
+            ]),
         )
         return MAIN_MENU
 
@@ -477,12 +534,16 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             if result_text:
                 msg += f"\n\nОтвет модели: {result_text[:200]}"
 
+            # Build back button that returns to the category we came from
+            previous_category = context.user_data.get("previous_category")
+            back_callback = f"cat_{previous_category}" if previous_category else "browse_root"
+
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔄 Попробовать снова", callback_data=f"effect_{effect_id}")],
-                [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
+                [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
             ])
             await status_msg.edit_text(msg, reply_markup=keyboard)
-            return MAIN_MENU
+            return BROWSING
 
         # Record generation for statistics
         db.record_generation(user.id, effect_id)
@@ -514,14 +575,19 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         # Refund credit
         new_balance = db.refund_credit(user.id)
 
+        # Build back button that returns to the category we came from
+        previous_category = context.user_data.get("previous_category")
+        back_callback = f"cat_{previous_category}" if previous_category else "browse_root"
+
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("🔄 Попробовать снова", callback_data=f"effect_{effect_id}")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
         ])
         await status_msg.edit_text(
             f"❌ Что-то пошло не так\n\nКредит возвращён на баланс.\n\nОшибка: {str(e)[:100]}",
             reply_markup=keyboard,
         )
+        return BROWSING
     finally:
         context.user_data.pop("effect_id", None)
 
@@ -530,10 +596,14 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
 async def photo_expected(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle non-photo message when photo is expected."""
+    # Build back button that returns to the category we came from
+    previous_category = context.user_data.get("previous_category")
+    back_callback = f"cat_{previous_category}" if previous_category else "browse_root"
+
     await update.message.reply_text(
         "Пожалуйста, отправь фото.",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
         ]),
     )
     return WAITING_PHOTO
@@ -929,6 +999,7 @@ def main() -> None:
         states={
             MAIN_MENU: [
                 # Inline keyboard handlers
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(show_browse_root, pattern="^menu_create$"),
                 CallbackQueryHandler(show_store, pattern="^menu_store$"),
                 CallbackQueryHandler(show_promo_input, pattern="^menu_promo$"),
@@ -939,6 +1010,7 @@ def main() -> None:
                 CallbackQueryHandler(select_effect, pattern="^effect_"),
             ] + reply_kb,
             BROWSING: [
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(show_browse_root, pattern="^browse_root$"),
                 CallbackQueryHandler(browse_category, pattern="^cat_"),
                 CallbackQueryHandler(select_effect, pattern="^effect_"),
@@ -946,39 +1018,50 @@ def main() -> None:
             ] + reply_kb,
             WAITING_PHOTO: [
                 MessageHandler(filters.PHOTO, handle_photo),
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
+                CallbackQueryHandler(show_browse_root, pattern="^browse_root$"),
+                CallbackQueryHandler(browse_category, pattern="^cat_"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ] + reply_kb + [
                 MessageHandler(~filters.PHOTO & ~filters.COMMAND, photo_expected),
             ],
             STORE: [
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(buy_package, pattern="^buy_"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ] + reply_kb,
             WAITING_PAYMENT: [
                 MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment),
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(cancel_payment, pattern="^cancel_payment$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ] + reply_kb,
             PROMO_INPUT: reply_kb + [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_promo_code),
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
             REFERRAL: [
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ] + reply_kb,
             ABOUT: [
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ] + reply_kb,
             ADMIN_MENU: [
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(show_admin_stats, pattern="^admin_stats$"),
                 CallbackQueryHandler(show_admin_promo, pattern="^admin_promo$"),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
             ADMIN_STATS: [
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
             ],
             ADMIN_PROMO: [
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(create_promo, pattern="^create_promo_"),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
             ],
