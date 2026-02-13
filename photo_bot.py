@@ -240,13 +240,13 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # Check if message has photo (can't edit photo messages to text)
     if query.message.photo:
         await query.message.delete()
+        await context.bot.send_message(
+            chat_id=user.id,
+            text=text,
+            reply_markup=reply_keyboard(),
+        )
     else:
         await query.edit_message_text(text)
-    await context.bot.send_message(
-        chat_id=user.id,
-        text=text,
-        reply_markup=reply_keyboard(),
-    )
     return MAIN_MENU
 
 
@@ -372,7 +372,17 @@ async def show_browse_root(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     context.user_data['current_category'] = None
 
     title, keyboard = build_browse_keyboard(None, credits)
-    await query.edit_message_text(title, reply_markup=keyboard)
+
+    # Check if message has photo (can't edit photo messages to text)
+    if query.message.photo:
+        await query.message.delete()
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=title,
+            reply_markup=keyboard,
+        )
+    else:
+        await query.edit_message_text(title, reply_markup=keyboard)
     return BROWSING
 
 
@@ -388,19 +398,37 @@ async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     # Validate category exists
     if category_id and category_id not in CATEGORIES:
-        await query.edit_message_text(
-            "❌ Категория не найдена\n\nНажми кнопку ниже, чтобы начать заново:",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 Начать заново", callback_data="restart")],
-            ]),
-        )
+        # Check if message has photo (can't edit photo messages to text)
+        error_text = "❌ Категория не найдена\n\nНажми кнопку ниже, чтобы начать заново:"
+        error_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔄 Начать заново", callback_data="restart")],
+        ])
+        if query.message.photo:
+            await query.message.delete()
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=error_text,
+                reply_markup=error_keyboard,
+            )
+        else:
+            await query.edit_message_text(error_text, reply_markup=error_keyboard)
         return MAIN_MENU
 
     # Track current browsing category
     context.user_data['current_category'] = category_id
 
     title, keyboard = build_browse_keyboard(category_id, credits)
-    await query.edit_message_text(title, reply_markup=keyboard)
+
+    # Check if message has photo (can't edit photo messages to text)
+    if query.message.photo:
+        await query.message.delete()
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=title,
+            reply_markup=keyboard,
+        )
+    else:
+        await query.edit_message_text(title, reply_markup=keyboard)
     return BROWSING
 
 
@@ -531,7 +559,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         if result_image is None:
             # Refund credit
             new_balance = db.refund_credit(user.id)
-            msg = f"❌ Что-то пошло не так\n\nКредит возвращён на баланс."
+            msg = f"❌ Что-то пошло не так\n\nКредит возвращён на баланс.\n⚡ Доступно зарядов: {new_balance}"
             if result_text:
                 msg += f"\n\nОтвет модели: {result_text[:200]}"
 
@@ -585,7 +613,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
         ])
         await status_msg.edit_text(
-            f"❌ Что-то пошло не так\n\nКредит возвращён на баланс.\n\nОшибка: {str(e)[:100]}",
+            f"❌ Что-то пошло не так\n\nКредит возвращён на баланс.\n⚡ Доступно зарядов: {new_balance}\n\nОшибка: {str(e)[:100]}",
             reply_markup=keyboard,
         )
         return BROWSING
@@ -624,10 +652,19 @@ async def show_store(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     ]
     buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")])
 
-    await query.edit_message_text(
-        "Выбери пакет:",
-        reply_markup=InlineKeyboardMarkup(buttons),
-    )
+    text = "Выбери пакет:"
+    keyboard = InlineKeyboardMarkup(buttons)
+
+    # Check if message has photo (can't edit photo messages to text)
+    if query.message.photo:
+        await query.message.delete()
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text,
+            reply_markup=keyboard,
+        )
+    else:
+        await query.edit_message_text(text, reply_markup=keyboard)
     return STORE
 
 
@@ -768,12 +805,21 @@ async def show_promo_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     query = update.callback_query
     await query.answer()
 
-    await query.edit_message_text(
-        "Введи промокод:",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
-        ]),
-    )
+    text = "Введи промокод:"
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
+    ])
+
+    # Check if message has photo (can't edit photo messages to text)
+    if query.message.photo:
+        await query.message.delete()
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text,
+            reply_markup=keyboard,
+        )
+    else:
+        await query.edit_message_text(text, reply_markup=keyboard)
     return PROMO_INPUT
 
 
@@ -814,13 +860,21 @@ async def show_referral(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     user = update.effective_user
     ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
 
-    # TODO: Telegram share button requires inline mode, showing link as text for now
-    await query.edit_message_text(
-        f"Приглашай друзей и получай\n+3 заряда за каждого!\n\nТвоя ссылка:\n{ref_link}",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
-        ]),
-    )
+    text = f"Приглашай друзей и получай\n+3 заряда за каждого!\n\nТвоя ссылка:\n{ref_link}"
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
+    ])
+
+    # Check if message has photo (can't edit photo messages to text)
+    if query.message.photo:
+        await query.message.delete()
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text,
+            reply_markup=keyboard,
+        )
+    else:
+        await query.edit_message_text(text, reply_markup=keyboard)
     return REFERRAL
 
 
@@ -847,10 +901,18 @@ async def show_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         buttons.append([InlineKeyboardButton("✉️ Написать в поддержку", url=f"https://t.me/{SUPPORT_USERNAME}")])
     buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")])
 
-    await query.edit_message_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(buttons),
-    )
+    keyboard = InlineKeyboardMarkup(buttons)
+
+    # Check if message has photo (can't edit photo messages to text)
+    if query.message.photo:
+        await query.message.delete()
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text,
+            reply_markup=keyboard,
+        )
+    else:
+        await query.edit_message_text(text, reply_markup=keyboard)
     return ABOUT
 
 
