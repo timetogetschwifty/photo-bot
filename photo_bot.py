@@ -189,6 +189,13 @@ def back_to_main_keyboard() -> InlineKeyboardMarkup:
     ])
 
 
+def back_to_browse_keyboard() -> InlineKeyboardMarkup:
+    """Keyboard that returns user to previous browse level."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_browse")],
+    ])
+
+
 # ── Main Menu ────────────────────────────────────────────────────────────────
 
 
@@ -273,6 +280,27 @@ async def restart_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         reply_markup=reply_keyboard(),
     )
     return MAIN_MENU
+
+
+async def back_to_browse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Return to previous browse category without deleting media messages."""
+    query = update.callback_query
+    await query.answer()
+
+    user = update.effective_user
+    db_user = db.get_user(user.id)
+    credits = db_user["credits"] if db_user else 0
+
+    category_id = context.user_data.get("previous_category")
+    context.user_data["current_category"] = category_id
+
+    title, keyboard = build_browse_keyboard(category_id, credits)
+    await context.bot.send_message(
+        chat_id=user.id,
+        text=title,
+        reply_markup=keyboard,
+    )
+    return BROWSING
 
 
 # ── Reply Keyboard Handlers ─────────────────────────────────────────────────
@@ -596,7 +624,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         await update.message.reply_photo(
             photo=output_buffer,
             caption=f"✅ {effect['label']}\n⚡ Осталось зарядов: {remaining}",
-            reply_markup=back_to_main_keyboard(),
+            reply_markup=back_to_browse_keyboard(),
         )
 
     except Exception as e:
@@ -1089,6 +1117,7 @@ def main() -> None:
             MAIN_MENU: [
                 # Inline keyboard handlers
                 CallbackQueryHandler(restart_bot, pattern="^restart$"),
+                CallbackQueryHandler(back_to_browse, pattern="^back_to_browse$"),
                 CallbackQueryHandler(show_browse_root, pattern="^menu_create$"),
                 CallbackQueryHandler(show_store, pattern="^menu_store$"),
                 CallbackQueryHandler(show_promo_input, pattern="^menu_promo$"),
@@ -1108,6 +1137,7 @@ def main() -> None:
             WAITING_PHOTO: [
                 MessageHandler(filters.PHOTO, handle_photo),
                 CallbackQueryHandler(restart_bot, pattern="^restart$"),
+                CallbackQueryHandler(back_to_browse, pattern="^back_to_browse$"),
                 CallbackQueryHandler(show_browse_root, pattern="^browse_root$"),
                 CallbackQueryHandler(browse_category, pattern="^cat_"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
