@@ -7,6 +7,7 @@ Features: credit system, promo codes, referrals, package purchases via YooMoney.
 
 import os
 import io
+import json
 import logging
 import yaml
 
@@ -647,7 +648,30 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         # Delete the menu message
         await query.delete_message()
 
-        # Send invoice
+        # Prepare fiscal receipt data (required by YooKassa for Russian tax law)
+        # NOTE: Invoice price is in kopecks, but receipt amount must be in RUBLES
+        price_rubles = package["price"] / 100
+
+        receipt_data = {
+            "receipt": {
+                "items": [
+                    {
+                        "description": f"{package['credits']} зарядов",
+                        "quantity": 1,
+                        "amount": {
+                            "value": price_rubles,
+                            "currency": "RUB"
+                        },
+                        "vat_code": 1,  # No VAT
+                        "payment_mode": "full_payment",
+                        "payment_subject": "service"
+                    }
+                ]
+            }
+        }
+
+        # Send invoice with fiscal data
+        # Email will be collected on payment form (required for receipt delivery)
         await context.bot.send_invoice(
             chat_id=update.effective_chat.id,
             title=f"Пакет {package['credits']} зарядов",
@@ -656,6 +680,9 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
             currency="RUB",
             prices=[LabeledPrice(f"{package['credits']} зарядов", package["price"])],
             provider_token=YOOMONEY_PROVIDER_TOKEN,
+            provider_data=json.dumps(receipt_data),
+            need_email=True,
+            send_email_to_provider=True,
         )
 
         # Send cancel button separately (invoices can't have inline buttons)
