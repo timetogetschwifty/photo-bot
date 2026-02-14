@@ -2,8 +2,14 @@
 Scheduled notification jobs for Photo Bot.
 Run daily to send automated notifications.
 
+Schedule: Daily at 10 AM MSK (7 AM UTC)
+Timezone: All times in MSK (Moscow, UTC+3)
+
 Usage:
     python jobs/notification_jobs.py
+
+Cron schedule (for 10 AM MSK):
+    0 7 * * *  (7 AM UTC = 10 AM MSK)
 """
 
 import asyncio

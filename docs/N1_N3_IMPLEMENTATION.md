@@ -2,8 +2,10 @@
 
 **Date:** 2026-02-13
 **Notifications Implemented:**
-- N1: Welcome Reminder (Daily 10 AM)
+- N1: Welcome Reminder (Daily 10 AM MSK / 7 AM UTC)
 - N3: Credits Exhausted (Real-time)
+
+**Timezone:** MSK (Moscow, UTC+3) — All scheduled times use Moscow timezone
 
 ---
 
@@ -149,7 +151,7 @@ railway logs --tail
 **Option A: Railway Cron** (if Railway supports cron):
 ```bash
 # Add to railway.toml or Railway dashboard
-# Schedule: 0 10 * * * (every day at 10 AM)
+# Schedule: 0 7 * * * (7 AM UTC = 10 AM MSK)
 python jobs/notification_jobs.py
 ```
 
@@ -161,7 +163,7 @@ name: Daily Notifications
 
 on:
   schedule:
-    - cron: '0 10 * * *'  # 10 AM UTC daily
+    - cron: '0 7 * * *'  # 7 AM UTC = 10 AM MSK (Moscow time)
   workflow_dispatch:  # Manual trigger for testing
 
 jobs:

@@ -109,9 +109,9 @@ async def send_welcome_reminder(user_id: int, username: str, credits: int) -> bo
         "Попробуй любой эффект — это займёт 1 минуту!"
     )
 
-    # Add inline keyboard button
+    # Add inline keyboard button - opens bot and shows browse screen
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("✨ Создать магию", url=f"https://t.me/{_get_bot_username()}")]
+        [InlineKeyboardButton("✨ Создать магию", url=f"https://t.me/{_get_bot_username()}?start=browse")]
     ])
 
     return await send_notification(user_id, "N1", message, reply_markup=keyboard)

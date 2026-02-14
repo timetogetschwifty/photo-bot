@@ -201,19 +201,27 @@ def back_to_browse_keyboard() -> InlineKeyboardMarkup:
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle /start command. Check for referral link."""
+    """Handle /start command. Check for referral link or deep link."""
     user = update.effective_user
     args = context.args
 
-    # Parse referral link: /start ref_123456
+    # Parse deep link parameters
     referred_by = None
-    if args and args[0].startswith("ref_"):
-        try:
-            referred_by = int(args[0][4:])
-            if referred_by == user.id:
-                referred_by = None  # Can't refer yourself
-        except ValueError:
-            pass
+    auto_browse = False
+
+    if args:
+        param = args[0]
+        # Referral link: /start ref_123456
+        if param.startswith("ref_"):
+            try:
+                referred_by = int(param[4:])
+                if referred_by == user.id:
+                    referred_by = None  # Can't refer yourself
+            except ValueError:
+                pass
+        # Browse deep link: /start browse
+        elif param == "browse":
+            auto_browse = True
 
     # Get or create user
     db_user, is_new = db.get_or_create_user(
@@ -225,12 +233,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     credits = db_user["credits"]
     name = user.first_name or "друг"
 
-    # Send reply keyboard (persistent) + inline menu
-    await update.message.reply_text(
-        f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇",
-        reply_markup=reply_keyboard(),
-    )
-    return MAIN_MENU
+    # If auto_browse is set, send welcome then show browse screen
+    if auto_browse:
+        await update.message.reply_text(
+            f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\n\nВыбери эффект 👇",
+            reply_markup=reply_keyboard(),
+        )
+        # Show browse screen immediately
+        title, keyboard = build_browse_keyboard(None, credits)
+        await update.message.reply_text(
+            title,
+            reply_markup=keyboard,
+            parse_mode='HTML',
+        )
+        return BROWSING
+    else:
+        # Normal start - just show main menu
+        await update.message.reply_text(
+            f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇",
+            reply_markup=reply_keyboard(),
+        )
+        return MAIN_MENU
 
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -481,31 +504,29 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         current_category = context.user_data.get('current_category')
         back_callback = f"cat_{current_category}" if current_category else "browse_root"
 
+        # Credits exhausted message (upsell to buy or refer)
+        ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
+
+        message = (
+            "😢 <b>Заряды закончились!</b>\n\n"
+            "Но не переживай — продолжить легко:\n\n"
+            "🎁 <b>Специальное предложение:</b>\n"
+            "10 зарядов всего за 99 ₽\n\n"
+            "Или пригласи друга и получи <b>+3 заряда бесплатно</b>! 👥\n\n"
+            f"Твоя ссылка:\n<code>{ref_link}</code>"
+        )
+
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("💳 Пополнить запасы", callback_data="menu_store")],
+            [InlineKeyboardButton("💳 Купить заряды", callback_data="menu_store")],
             [InlineKeyboardButton("👥 Пригласить друга", callback_data="menu_referral")],
             [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
         ])
+
         await query.edit_message_text(
-            "❌ У тебя закончились заряды",
+            message,
             reply_markup=keyboard,
+            parse_mode="HTML",
         )
-
-        # N3: Send credits exhausted notification (only if never purchased)
-        if db_user and db_user["telegram_id"]:
-            # Check if user has ever purchased
-            conn = db.get_connection()
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT 1 FROM purchases WHERE user_id = ? LIMIT 1",
-                (user.id,)
-            )
-            has_purchased = cursor.fetchone() is not None
-            conn.close()
-
-            if not has_purchased:
-                ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
-                await notif.send_credits_exhausted(user.id, ref_link)
 
         return BROWSING
 
@@ -561,10 +582,30 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
     # Deduct credit
     if not db.deduct_credit(user.id):
-        await update.message.reply_text(
-            "❌ У тебя закончились заряды",
-            reply_markup=back_to_main_keyboard(),
+        # Credits exhausted message (upsell to buy or refer)
+        ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
+
+        message = (
+            "😢 <b>Заряды закончились!</b>\n\n"
+            "Но не переживай — продолжить легко:\n\n"
+            "🎁 <b>Специальное предложение:</b>\n"
+            "10 зарядов всего за 99 ₽\n\n"
+            "Или пригласи друга и получи <b>+3 заряда бесплатно</b>! 👥\n\n"
+            f"Твоя ссылка:\n<code>{ref_link}</code>"
         )
+
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("💳 Купить заряды", callback_data="menu_store")],
+            [InlineKeyboardButton("👥 Пригласить друга", callback_data="menu_referral")],
+            [InlineKeyboardButton("⬅️ Главное меню", callback_data="main_menu")],
+        ])
+
+        await update.message.reply_text(
+            message,
+            reply_markup=keyboard,
+            parse_mode="HTML",
+        )
+
         return MAIN_MENU
 
     # Download photo

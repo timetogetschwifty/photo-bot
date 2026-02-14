@@ -16,6 +16,8 @@
 
 ## Engagement Features
 
+**Note:** All scheduled notification times use **MSK (Moscow timezone, UTC+3)**
+
 ### ✅ Completed
 - [x] **N1: Welcome Reminder** — Code ready, sends reminder to users who signed up but never generated (24h after signup)
 - [x] **N3: Credits Exhausted** — Live in production, upsell message when free users run out of credits

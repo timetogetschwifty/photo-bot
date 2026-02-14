@@ -1,0 +1,15 @@
+# Railway Configuration for Photo Bot
+# Docs: https://docs.railway.app/deploy/config-as-code
+
+[build]
+# No custom build needed
+
+[deploy]
+# Main bot service - runs continuously
+startCommand = "python photo_bot.py"
+
+# Scheduled notifications
+[[crons]]
+# N1: Welcome Reminder - Daily at 10 AM MSK (7 AM UTC)
+schedule = "0 7 * * *"
+command = "python jobs/notification_jobs.py"

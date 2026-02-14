@@ -42,18 +42,20 @@ This document outlines the complete notification strategy to improve:
 
 Organized by user lifecycle stage:
 
+**Timezone:** All scheduled times are in **MSK (Moscow, UTC+3)**
+
 | ID | Name | Priority | Schedule | Trigger | Expected Impact |
 |----|------|----------|----------|---------|-----------------|
-| **N1** | Welcome Reminder | P0 | Daily 10 AM | 24h after signup, 0 generations | +30% activation rate |
+| **N1** | Welcome Reminder | P0 | Daily 10 AM MSK | 24h after signup, 0 generations | +30% activation rate |
 | **N2** | Credits Running Low | P0 | Real-time | 1 credit remaining | +20% conversion |
 | **N3** | Credits Exhausted | P0 | Real-time | 0 credits, never purchased | +15% conversion |
-| **N4** | Win-Back Offer | P0 | Weekly (Mon 11 AM) | 30 days inactive | +10% reactivation |
-| **N5** | New Effects Available | P1 | Weekly (Fri 12 PM) | New effects added | +5% engagement |
+| **N4** | Win-Back Offer | P0 | Weekly (Mon 11 AM MSK) | 30 days inactive | +10% reactivation |
+| **N5** | New Effects Available | P1 | Weekly (Fri 12 PM MSK) | New effects added | +5% engagement |
 | **N6** | Referral Reminder | P1 | Event-based | After 3rd generation | +40% referral attempts |
 | **N7** | First Purchase Thank You | P1 | Real-time | Immediately after 1st purchase | +10% repeat purchase |
 | **N8** | Power User VIP | P2 | Event-based | 25+ generations | +20% loyalty |
 | **N9** | Abandoned Payment | P2 | Hourly | Invoice sent, no payment after 1h | +5% conversion |
-| **N10** | Admin Daily Digest | P0 | Daily 9 AM | Every morning | Better decision-making |
+| **N10** | Admin Daily Digest | P0 | Daily 9 AM MSK | Every morning | Better decision-making |
 
 ---
 
@@ -82,9 +84,9 @@ Organized by user lifecycle stage:
 ```
 
 **Implementation:**
-- Daily cron job checks for users matching criteria
+- Daily cron job at **10 AM MSK** (7 AM UTC) checks for users matching criteria
 - Send message via bot API
-- Log as `notification_sent` in user_activity table
+- Log to `notification_log` table
 
 **Expected Outcome:** 30% of reminded users try their first generation
 
