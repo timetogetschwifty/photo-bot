@@ -21,6 +21,7 @@ Set these in Railway Dashboard → Variables:
 | `ADMIN_ID` | Telegram user ID of admin | `280191018` |
 | `BOT_USERNAME` | Bot username WITHOUT @ (for referral links https://t.me/{value}) | `top_ai_photo_bot` |
 | `SUPPORT_USERNAME` | Support Telegram username WITHOUT @ | `your_support_account` |
+| `DB_PATH` | **Required** - Path to database file on Railway volume | `/data/photo_bot.db` |
 
 ## Files Deployed to Railway
 
@@ -46,8 +47,24 @@ Railway deploys everything from the repository except files in `.gitignore`:
 
 - **Type**: SQLite
 - **File**: `photo_bot.db` (created automatically on Railway)
-- **Persistence**: Railway volume (persists across deployments)
-- **Location**: `/app/photo_bot.db` in container
+- **Persistence**: Railway volume mounted at `/data`
+- **Location**: `/data/photo_bot.db` in container
+- **Environment Variable**: `DB_PATH=/data/photo_bot.db` (required)
+
+### Volume Configuration
+
+**Required:** Attach a volume to your Railway service
+
+1. Go to Railway Dashboard → **Settings** → **Volumes**
+2. Click "**Attach volume to service**"
+3. Set **Volume mount path**: `/data`
+4. Save changes
+
+The database file will be created automatically on first run and persists across all deployments and restarts.
+
+### Local Development
+
+Locally, the database falls back to `Photo bot/photo_bot.db` (same directory as the script)
 
 ## How to Update the Bot
 
@@ -112,6 +129,37 @@ DEBUG: YooMoney token length: 21
 ```
 
 If False, environment variable not loaded correctly.
+
+## Database Access for Analysis
+
+### Download Database from Railway
+
+Use Railway CLI to download the database for local analysis:
+
+```bash
+# Install Railway CLI (one-time)
+npm i -g @railway/cli
+
+# Login and link to project
+railway login
+railway link
+
+# Download database file
+railway run cat /data/photo_bot.db > photo_bot_backup.db
+```
+
+Now you can analyze `photo_bot_backup.db` locally with SQL tools, Python, or Excel.
+
+### Built-in Analytics
+
+The bot has a `/admin` command that shows:
+- Total users and generations
+- Revenue statistics (total + per-package breakdown)
+- Effect popularity (generations per effect)
+
+**Note:** User segments analysis requires running SQL queries or export scripts. See [DATA_ANALYSIS.md](DATA_ANALYSIS.md) and [ANALYTICS_IMPLEMENTATION.md](ANALYTICS_IMPLEMENTATION.md)
+
+---
 
 ## Monitoring
 

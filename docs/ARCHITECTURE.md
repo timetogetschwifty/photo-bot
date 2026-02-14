@@ -47,6 +47,7 @@ Effects support 3 levels of nesting via YAML config:
 | promo_redemptions | Tracks who redeemed which codes |
 | generations | Each generation (for per-effect statistics) |
 | purchases | Package purchase history (for revenue tracking) |
+| notification_log | Tracks sent notifications (prevents spam, measures effectiveness) |
 
 ## Key Files
 
@@ -54,9 +55,13 @@ Effects support 3 levels of nesting via YAML config:
 |------|---------|
 | `photo_bot.py` | Main bot logic, handlers, conversation flow |
 | `database.py` | SQLite database operations |
+| `notifications.py` | Notification system (N1, N3, etc.) |
 | `effects.yaml` | Effect/category config (labels, order, enabled, hierarchy) |
 | `prompts/` | Prompt text files, auto-resolved by `{effect_id}.txt` |
 | `images/` | Example images, auto-resolved by `{effect_id}.jpg` |
+| `jobs/notification_jobs.py` | Scheduled notification tasks (N1 daily reminder) |
+| `migrations/` | Database schema migrations |
+| `reports/export_csv.py` | Export data to CSV for analysis |
 | `test_prompt.py` | CLI tool to test prompts without running the bot |
 
 ## Runtime Config

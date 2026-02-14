@@ -85,6 +85,29 @@ def init_db() -> None:
         )
     """)
 
+    # Notification log table (tracks sent notifications to prevent spam)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS notification_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            notification_id TEXT NOT NULL,
+            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            opened BOOLEAN DEFAULT 0,
+            clicked BOOLEAN DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES users(telegram_id)
+        )
+    """)
+
+    # Create indexes for notification_log
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_notif_user
+        ON notification_log(user_id, notification_id)
+    """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_notif_sent
+        ON notification_log(sent_at)
+    """)
+
     conn.commit()
     conn.close()
 

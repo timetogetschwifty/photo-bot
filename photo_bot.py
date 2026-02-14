@@ -34,6 +34,7 @@ from telegram.ext import (
 )
 
 import database as db
+import notifications as notif
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 
@@ -489,6 +490,23 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             "❌ У тебя закончились заряды",
             reply_markup=keyboard,
         )
+
+        # N3: Send credits exhausted notification (only if never purchased)
+        if db_user and db_user["telegram_id"]:
+            # Check if user has ever purchased
+            conn = db.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT 1 FROM purchases WHERE user_id = ? LIMIT 1",
+                (user.id,)
+            )
+            has_purchased = cursor.fetchone() is not None
+            conn.close()
+
+            if not has_purchased:
+                ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
+                await notif.send_credits_exhausted(user.id, ref_link)
+
         return BROWSING
 
     # Store selected effect and remember which category we came from
@@ -1097,6 +1115,9 @@ async def admin_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 def main() -> None:
     """Start the bot."""
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+
+    # Initialize notification system
+    notif.init_notifications(app.bot)
 
     # Reply keyboard handlers — shared across all user-facing states
     reply_kb = [

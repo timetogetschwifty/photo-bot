@@ -116,7 +116,7 @@ Generate 10 transformation ideas spread across at least 4 of these categories:
 
 **For each idea provide:**
 
-1. **Name** — catchy, 2-4 words, works in Russian
+1. **Name** — catchy, 2-4 words
 
 2. **What it does** — 2-3 sentences, specific visual description
 
@@ -132,7 +132,7 @@ Generate 10 transformation ideas spread across at least 4 of these categories:
 **FACE TREATMENT GUIDANCE:**
 
 **Use PRESERVE for:**
-- Style changes (Ghibli anime, oil painting, cyberpunk, vintage photo)
+- Style changes (popular anime, oil painting, cyberpunk, vintage photo)
 - Background swaps (Paris, space, underwater, fantasy world)
 - Costume/clothing changes (superhero, historical outfit, professional attire)
 - Artistic filters (impressionist, pop art, sketch, cinematic)
@@ -340,18 +340,40 @@ Develop a comprehensive pre-prompt brief covering:
    - List features to MODIFY (what changes for the concept)
    - Explain the balance: recognizable as the user, but adapted to the concept
 
-4. **Must-change elements** — what gets transformed (background, clothing, color palette, artistic style, lighting, etc.)
+4. **Must-remove elements** — CRITICAL SECTION. Specify what MUST be completely removed from typical user photos for this transformation to work:
+   - **Furniture**: chairs, tables, sofas (if transformation shows standing/formal pose)
+   - **Other people**: hands, arms, limbs from people outside the main subject (for solo transformations)
+   - **Original background**: indoor settings, walls, rooms (if new environment is specified)
+   - **Props**: objects held or worn that conflict with new concept
+   - **Clothing remnants**: visible parts of modern clothing that should be fully replaced
 
-5. **Mood & tone** — emotional quality of the result (cinematic, playful, dramatic, dreamy, nostalgic, etc.)
+   **GUIDANCE:**
+   - If transformation requires subject to be STANDING (portrait, red carpet, formal scene) → MUST remove all chairs/furniture
+   - If transformation is SOLO (one person in final output) → MUST remove all other people's body parts
+   - If transformation has NEW ENVIRONMENT → MUST remove all original background elements
+   - Be exhaustive: list every category of objects that commonly appears in user photos and conflicts with this concept
+   - For each category, explain WHY it must be removed (e.g., "chairs must be removed because subject should appear standing in regal portrait pose")
 
-6. **Edge cases** — how should the transformation handle:
-   - Group photos
-   - No visible face / partial face
-   - Low quality input
-   - Children in photos
-   - Note expected behavior, not prompt text
+5. **Must-change elements** — what gets transformed (background, clothing, color palette, artistic style, lighting, etc.)
 
-7. **Quality markers** — specific quality descriptors needed (lighting type, resolution feel, detail level, artistic medium, texture)
+6. **Body/pose handling** — specify required body position and pose:
+   - Standing vs sitting
+   - Full-body vs portrait crop
+   - Hand positioning (natural at sides, holding object, gesturing, etc.)
+   - If original pose conflicts with concept, note how to reconstruct it
+
+7. **Mood & tone** — emotional quality of the result (cinematic, playful, dramatic, dreamy, nostalgic, etc.)
+
+8. **Edge cases** — how should the transformation handle:
+   - **Group photos**: Should all people be transformed, or only main subject? If only main subject, must remove others completely (including hands on shoulders, arms around waist, etc.)
+   - **Sitting pose in original**: If transformation requires standing, specify how to reconstruct natural standing pose
+   - **Hands from others**: If solo transformation, must remove all hands/arms/body parts from people outside the frame
+   - **No visible face / partial face**: Expected behavior (skip transformation, proceed anyway, etc.)
+   - **Low quality input**: Enhancement approach or minimum quality threshold
+   - **Children in photos**: Age-appropriate styling requirements
+   - **For each case**: provide SPECIFIC instructions for the prompt engineer, not just "handle gracefully"
+
+9. **Quality markers** — specific quality descriptors needed (lighting type, resolution feel, detail level, artistic medium, texture)
 
 **OUTPUT FORMAT:**
 
@@ -370,17 +392,30 @@ STYLE REFERENCES:
 FACE HANDLING:
 [Mode-specific instructions from section 3 above]
 
+MUST-REMOVE ELEMENTS:
+- Furniture: [chairs/tables/etc. - with rationale]
+- Other people: [hands/arms/limbs - if solo transformation]
+- Original background: [indoor/outdoor elements - if new environment]
+- Props: [objects that conflict with concept]
+- Clothing remnants: [modern elements to fully replace]
+[Be exhaustive and specific for this transformation concept]
+
 MUST-CHANGE ELEMENTS:
 [Background, clothing, style, etc.]
+
+BODY/POSE HANDLING:
+[Standing vs sitting, hand positioning, full-body vs portrait, pose reconstruction if needed]
 
 MOOD & TONE:
 [Emotional quality]
 
 EDGE CASES:
-- Group photos: [behavior]
+- Group photos: [specific instructions for removal/handling]
+- Sitting pose: [how to reconstruct as standing if needed]
+- Hands from others: [removal instructions for solo transformations]
 - No/partial face: [behavior]
-- Low quality: [behavior]
-- Children: [behavior]
+- Low quality: [enhancement approach]
+- Children: [age-appropriate styling]
 
 QUALITY MARKERS:
 [Lighting, resolution, detail, medium, texture]
@@ -436,14 +471,55 @@ Your ONLY job: convert a creative brief into a single production prompt that get
 - Explicitly state which features to modify: "Modify [specific features: add age lines, adjust bone structure, etc.] to show [concept: aging 15 years, adaptation to 1920s beauty standards, etc.]"
 - Clarify intent: "Result should be recognizable as the original person but visibly adapted to [concept]"
 
+**REMOVAL-FIRST PROMPTING (CRITICAL):**
+
+When the brief includes "MUST-REMOVE ELEMENTS," use this structure:
+
+1. **Open with transformation verb**
+2. **State removals FIRST** — be explicit about what to remove from the original photo
+3. **Then state what to generate** — describe the new environment/elements that replace the removed ones
+4. **Then specify body/pose** — if transformation requires different pose than original (sitting → standing)
+5. **Then face preservation** — facial likeness instructions
+6. **Then style/quality** — artistic rendering, lighting, etc.
+7. **End with specific negatives** — semantic negatives that directly address common failures for this transformation
+
+**EXAMPLE STRUCTURE:**
+```
+Transform this photo into [concept]. Remove all [furniture/chairs/tables], [other people's hands/arms/limbs], and [original background/environment]. Generate an entirely new [specific environment] with [specific elements]. Show subject [standing/in X pose] with [hand positioning]. Preserve exact facial features, likeness, and identity of [main subject / all people]. [Style instructions]. [Lighting]. [Quality markers]. No [specific unwanted objects from removal list], no extra limbs, avoid distortion, no artifacts.
+```
+
+**WHY THIS WORKS:**
+- Gemini processes image-to-image prompts sequentially
+- Stating removals FIRST primes the model to discard unwanted elements before generating new ones
+- Explicit removal prevents "preserve pose" from keeping chairs/furniture the subject is sitting on
+- "Generate entirely new [environment]" overrides any instruction to preserve original background
+
 **Visual descriptors:**
 - Use concrete visual descriptors (not "beautiful" or "amazing" — instead: "warm golden hour lighting", "muted earth tones", "visible oil paint brushstrokes")
 - Specify: art style, lighting type, color palette, texture/medium
 - Every sentence should add meaningful visual instruction. If a sentence doesn't change the output, cut it.
 
 **Semantic negatives:**
-- Weave naturally into the flow: "maintain natural proportions, avoid distortion of facial features, no extra limbs, no artifacts"
-- For MODIFY mode: "avoid keeping the original face unchanged, no identical facial features"
+
+Generic negatives are WEAK and get ignored. Use SPECIFIC negatives based on the brief's MUST-REMOVE section:
+
+**WEAK (don't use):**
+- "no extra limbs, no artifacts"
+
+**STRONG (use this):**
+- "no hands from other people, no arms extending into frame from outside, only the subject's own hands visible"
+- "no chairs, no tables, no furniture from original photo"
+- "no indoor backgrounds, no walls from original room"
+
+**RULES:**
+- Every item in MUST-REMOVE section must appear in the semantic negatives at the end of the prompt
+- Use concrete object names, not abstract categories: "no chairs" not "no furniture artifacts"
+- For solo transformations, always include: "no hands from other people, no extra limbs extending into frame"
+- For standing poses, always include: "no chairs, no furniture"
+- For new environments, always include: "no [specific original background elements]"
+- Weave naturally at the end: "Avoid distortion of facial features. No [specific objects from removal list], no extra limbs, no artifacts."
+
+**For MODIFY mode, add:** "avoid keeping the original face unchanged, no identical facial features"
 
 **Format:**
 - Write as a descriptive paragraph, not a keyword list
@@ -484,7 +560,12 @@ Write a production-ready transformation prompt.
 ===END UX NOTE===
 ```
 
-**EXAMPLE OF A GOOD PROMPT (PRESERVE mode):**
+**EXAMPLE OF A GOOD PROMPT (PRESERVE mode with removals):**
+```
+Transform this photo into a formal Russian Imperial Tsar portrait. Remove all other people, hands, arms, or body parts from others outside the main subject. Remove all modern furniture, chairs, tables, and original background completely. Generate an entirely new palace interior with marble columns, red velvet drapes, and gilded throne. Show subject standing in formal regal pose with natural hand positioning for holding imperial scepter. Preserve exact facial likeness, bone structure, gaze, skin tone, and age of main subject so identity remains unmistakable. Replace all modern clothing with imperial regalia: ermine-trimmed crimson velvet mantle, jeweled crown, medals, sash. Render in 19th-century academic realism with painterly brushwork, ultra-high textile detail. Illuminate with warm Rembrandt-style candlelit chiaroscuro, deep shadows, soft background falloff. Museum-grade oil painting texture with subtle brushstrokes, rich crimson and gold palette, ivory highlights. Only subject's own hands visible, no hands from other people, no extra limbs, no furniture from original photo, avoid distortion of facial features, no artifacts.
+```
+
+**EXAMPLE OF A GOOD PROMPT (PRESERVE mode, simple style transfer):**
 ```
 Transform this photo into a Studio Ghibli anime scene. Maintain the exact facial features, face shape, and likeness of every person in the photo. Keep skin tone, facial proportions, and identity completely unchanged. Render in Hayao Miyazaki's signature style with soft cel shading, warm pastel color palette, and gentle diffused daylight. Add a whimsical background with rolling green hills, scattered wildflowers, and soft cumulus clouds. Only the artistic rendering changes — the faces remain identical. Avoid distortion of facial features, no extra limbs, no artifacts. Clean linework with subtle watercolor texture throughout.
 ```
@@ -501,10 +582,16 @@ Make this photo look like anime. Beautiful, stunning, amazing quality, best qual
 
 **SELF-CHECK BEFORE SUBMITTING:**
 - ☐ Opens with transformation action verb
+- ☐ If brief has MUST-REMOVE section: removals stated FIRST, before generation instructions
+- ☐ If transformation requires standing pose: explicitly removes chairs/furniture
+- ☐ If solo transformation: explicitly removes other people's hands/limbs
+- ☐ If new environment: explicitly removes original background
 - ☐ Face handling matches the Face Treatment mode (PRESERVE/MODIFY/HYBRID)
+- ☐ Body/pose instructions match brief (standing vs sitting, hand positioning)
 - ☐ Art style is named concretely (not just "artistic")
 - ☐ Lighting and color palette are specified
-- ☐ Semantic negatives are present and naturally woven in
+- ☐ Semantic negatives are SPECIFIC to this transformation (not generic "no artifacts")
+- ☐ Every MUST-REMOVE item appears in semantic negatives at end
 - ☐ Raw plaintext, no formatting
 - ☐ No SD/MJ/forbidden syntax
 - ☐ No real celebrity names
@@ -580,6 +667,30 @@ Audit the prompt against the checklist below. For each item, mark **PASS ✅** o
 ☐ Preserve vs. transform boundaries are clear and consistent
 ☐ Semantic negatives don't contradict positive instructions
 ☐ Face handling instructions match the declared Face Treatment mode
+☐ Body/pose instructions don't conflict with removal instructions (e.g., "preserve pose" while "remove chair" would make them float)
+
+### 【REMOVAL COMPLETENESS - CRITICAL】
+
+**IF brief has MUST-REMOVE section, check the following:**
+
+☐ **Removal-first structure**: Prompt states removals BEFORE generation instructions (not after or mixed in)
+☐ **Furniture removal**: If brief says remove furniture/chairs/tables, prompt explicitly states "Remove all furniture/chairs/tables"
+☐ **Other people removal**: If solo transformation, prompt states "Remove all other people, hands, arms, body parts from others"
+☐ **Background removal**: If new environment specified, prompt states "Remove all original background" or "Completely remove original environment"
+☐ **Generation follows removal**: After removals, prompt says "Generate entirely new [environment]" (not just "add" or "surround with")
+☐ **Body/pose reconstruction**: If transformation requires different pose than what user might have (sitting→standing), prompt explicitly states new pose
+☐ **Specific semantic negatives**: End of prompt includes specific negatives for each MUST-REMOVE item:
+  - If furniture removed → includes "no chairs, no tables, no furniture from original photo"
+  - If other people removed → includes "no hands from other people, no extra limbs extending into frame"
+  - If background removed → includes "no [specific original background elements]"
+☐ **No generic weak negatives**: Prompt doesn't rely solely on "no artifacts" or "no extra limbs" without specific object names
+
+**COMMON FAILURES TO FLAG:**
+- ❌ "Preserve pose" + transformation requires standing → keeps chair user is sitting on
+- ❌ "Surround with X" without "remove original background" → blends old and new
+- ❌ "Only show main subject" without "remove hands from others" → third hand appears
+- ❌ Generic "no extra limbs" when original photo has extra limbs → model ignores it
+- ❌ Removals stated at END of prompt instead of BEGINNING → model has already generated unwanted elements
 
 ### 【EDGE CASE RESILIENCE】
 ☐ Would the prompt produce reasonable results with:
