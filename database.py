@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 # Database file path (same directory as this script)
-DB_PATH = Path(__file__).parent / "photo_bot.db"
+DB_PATH = Path(os.getenv("DB_PATH", "/data/photo_bot.db"))
 
 
 def get_connection() -> sqlite3.Connection:
