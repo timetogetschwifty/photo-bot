@@ -233,18 +233,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     credits = db_user["credits"]
     name = user.first_name or "друг"
 
-    # If auto_browse is set, send welcome then show browse screen
+    # If auto_browse is set, go straight to effects menu (single message)
     if auto_browse:
-        await update.message.reply_text(
-            f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\n\nВыбери эффект 👇",
-            reply_markup=reply_keyboard(),
-        )
-        # Show browse screen immediately
+        context.user_data["current_category"] = None
         title, keyboard = build_browse_keyboard(None, credits)
         await update.message.reply_text(
             title,
             reply_markup=keyboard,
-            parse_mode='HTML',
         )
         return BROWSING
     else:
