@@ -3,6 +3,7 @@ SQLite database layer for Photo Bot.
 Handles users, promo codes, redemptions, and generation tracking.
 """
 
+import os
 import sqlite3
 import secrets
 import string
