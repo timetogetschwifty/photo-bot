@@ -11,8 +11,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-# Database file path (same directory as this script)
-DB_PATH = Path(os.getenv("DB_PATH", "/data/photo_bot.db"))
+# Database file path
+# On Railway: uses /data/photo_bot.db (set via DB_PATH env var)
+# Locally: uses photo_bot.db in same directory as this script
+default_db_path = str(Path(__file__).parent / "photo_bot.db")
+DB_PATH = Path(os.getenv("DB_PATH", default_db_path))
 
 
 def get_connection() -> sqlite3.Connection:
