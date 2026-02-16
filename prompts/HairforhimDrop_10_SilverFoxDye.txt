@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve the exact face likeness, facial proportions, expression, age, skin tone, eye color, head position, body posture, clothing, accessories, background, framing, and the total number of people.
+Transformation directives: Only transform the hair color of the largest_face subject into a cool silver-gray “silver fox” dye with subtle darker lowlights for depth; keep texture natural with realistic shine and believable roots so it looks intentionally dyed, not flat gray. Maintain the original hairstyle shape and hairline while changing only the color and depth variation. Keep all other people unchanged in the background; only the largest_face subject’s hair changes.
+Negatives: Do not change the face, eyebrows, facial hair, or skin; no uniform monochrome “paint fill,” no blue/purple tint cast on skin, no blotchy patches, no leftover original hair color visible. No changing hair volume or hairline placement. No hands/arms from other people interacting with the subject; only the subject’s own hands may be visible. No extra limbs, no distortions, no face merges.
+Technical/realism: Match the original photo’s lighting direction, shadows, contrast, depth of field, and camera realism exactly.
+===END PROMPT===

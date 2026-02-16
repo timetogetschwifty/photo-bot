@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve the exact face likeness, facial proportions, expression, age, skin tone, eye color, head position, body posture, clothing, accessories, background, framing, and the total number of people.
+Transformation directives: Only transform the hair of the largest_face subject to medium-length K-pop curtain bangs with a clean center part, face-framing layers, and a slight airy volume at the roots; keep texture soft, glossy, and natural with visible strands. Ensure bangs sit realistically relative to eyebrows and forehead without changing eyebrow shape. Keep all other people unchanged in the background; only the largest_face subject’s hair changes.
+Negatives: Do not change the face, eyebrows, eyelashes, jawline, or skin; no wig seams, no overly perfect “painted” gloss, no unnatural symmetry, no hair covering eyes in a way that changes gaze. No remnants of the original hairstyle visible around the part line. No hands/arms from other people interacting with the subject; only the subject’s own hands may be visible. No extra people, no warped ears/forehead.
+Technical/realism: Match the original photo’s lighting direction, shadows, contrast, depth of field, and camera realism exactly.
+===END PROMPT===

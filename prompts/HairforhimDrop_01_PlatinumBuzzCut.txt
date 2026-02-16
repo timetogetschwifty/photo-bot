@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve the exact face likeness, facial proportions, expression, age, skin tone, eye color, head position, body posture, clothing, accessories, background, framing, and the total number of people.
+Transformation directives: Only transform the hair of the largest_face subject: crop to a clean, even buzz cut and dye it icy platinum with a slightly darker natural root shadow; add crisp scalp texture and subtle fresh shine so it looks recently done, not painted. Keep hairline placement realistic and consistent with the person’s original hairline and forehead shape. Keep all other people unchanged in the background; only the largest_face subject’s hair changes.
+Negatives: Do not change the face, eyebrows, beard/mustache, skin texture, teeth, or eye shape; no wig-like edges, no flat “solid color” helmet hair, no patchy bleach artifacts, no leftover original hairstyle visible, no hair color bleeding onto skin or clothing. No hands/arms from other people interacting with or covering the main subject; only the subject’s own hands may be visible. No extra people, no merged faces, no distorted head shape, no extra limbs.
+Technical/realism: Match the original photo’s lighting direction, shadows, contrast, depth of field, and camera realism exactly.
+===END PROMPT===

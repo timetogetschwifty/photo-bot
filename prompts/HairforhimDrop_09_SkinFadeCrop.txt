@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve the exact face likeness, facial proportions, expression, age, skin tone, eye color, head position, body posture, clothing, accessories, background, framing, and the total number of people.
+Transformation directives: Only transform the hair of the largest_face subject into a super-clean skin fade on the sides with a short textured crop on top; the fade gradient should be sharp and smooth like a fresh barber visit, and the top should have natural micro-texture with visible strands. Keep the fade aligned with the head curvature and around the ears realistically. Keep all other people unchanged in the background; only the largest_face subject’s hair changes.
+Negatives: Do not change the face, eyebrows, facial hair, or skin; no blurred fade, no banding steps, no overexposed scalp patches, no leftover original hairstyle visible. No changing ear position or head shape. No hands/arms from other people interacting with the subject; only the subject’s own hands may be visible. No extra limbs, no distortions, no face merges.
+Technical/realism: Match the original photo’s lighting direction, shadows, contrast, depth of field, and camera realism exactly.
+===END PROMPT===

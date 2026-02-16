@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve the exact face likeness, facial proportions, expression, age, skin tone, eye color, head position, body posture, clothing, accessories, background, framing, and the total number of people.
+Transformation directives: Only transform the hair of the largest_face subject into a tight modern perm with defined small curls, controlled natural frizz, and realistic curl shadows and bounce; maintain a believable hairline and natural density. Keep curl direction and volume proportional to head shape so it looks freshly styled, not inflated. Keep all other people unchanged in the background; only the largest_face subject’s hair changes.
+Negatives: Do not change the face, eyebrows, facial hair, or skin; no “noodle curls,” no repetitive copy-paste ringlets, no matte plastic texture, no leftover original straight strands visible. No curl mass covering eyes or reshaping the forehead. No hands/arms from other people interacting with the subject; only the subject’s own hands may be visible. No extra limbs, no distortions, no face merges.
+Technical/realism: Match the original photo’s lighting direction, shadows, contrast, depth of field, and camera realism exactly.
+===END PROMPT===

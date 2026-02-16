@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve the exact face likeness, facial proportions, expression, age, skin tone, eye color, head position, body posture, clothing, accessories, background, framing, and the total number of people.
+Transformation directives: Only transform the hair of the largest_face subject into a sharp undercut with clean side contrast and a longer top slicked straight back; make the direction crisp, barber-fresh, with subtle realistic shine and a clean part line if it fits naturally. Keep the undercut boundary aligned with the head shape and ears without altering ear position. Keep all other people unchanged in the background; only the largest_face subject’s hair changes.
+Negatives: Do not change the face, eyebrows, facial hair, or skin; no greasy over-shine, no unnatural hard-edged “cap,” no blurred hairline, no leftover original hairstyle visible at the sides. No scalp showing through in random patches. No hands/arms from other people interacting with the subject; only the subject’s own hands may be visible. No extra limbs, no duplicated faces, no distortions.
+Technical/realism: Match the original photo’s lighting direction, shadows, contrast, depth of field, and camera realism exactly.
+===END PROMPT===

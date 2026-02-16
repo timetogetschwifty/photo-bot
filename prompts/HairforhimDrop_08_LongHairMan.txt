@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve the exact face likeness, facial proportions, expression, age, skin tone, eye color, head position, body posture, clothing, accessories, background, framing, and the total number of people.
+Transformation directives: Only transform the hair of the largest_face subject to look grown to shoulder length and tied into a slightly messy man bun, with a few loose strands near the temples, realistic thickness, flyaways, and natural tension where hair is gathered. Keep the hairline consistent and integrate the longer hair naturally behind ears/neck without changing ear shape or jawline. Keep all other people unchanged in the background; only the largest_face subject’s hair changes.
+Negatives: Do not change the face, eyebrows, facial hair, or skin; no wig-like pasted hair, no floating bun, no unnatural straight “sheet hair,” no leftover original short style visible. No hair that clips through shoulders/clothing in impossible ways. No hands/arms from other people interacting with the subject; only the subject’s own hands may be visible. No extra limbs, no duplicated faces, no distortions.
+Technical/realism: Match the original photo’s lighting direction, shadows, contrast, depth of field, and camera realism exactly.
+===END PROMPT===

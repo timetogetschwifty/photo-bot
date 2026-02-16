@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve the exact face likeness, facial proportions, expression, age, skin tone, eye color, head position, body posture, clothing, accessories, background, framing, and the total number of people.
+Transformation directives: Only transform the hair of the largest_face subject into short spiky texture with bright neon tips (electric blue or toxic green) while the base stays darker and natural; the neon color should sit on the ends like a salon dip-dye with realistic shine and strand separation. Keep spikes proportional and believable, with subtle shadowing between clumps. Keep all other people unchanged in the background; only the largest_face subject’s hair changes.
+Negatives: Do not change the face, eyebrows, facial hair, or skin; no neon color bleeding onto skin/clothes, no full-head neon fill, no plastic spikes, no jagged aliasing, no leftover original hairstyle visible. No spikes that pierce into the forehead or cover the eyes unnaturally. No hands/arms from other people interacting with the subject; only the subject’s own hands may be visible. No extra limbs, no distortions, no face merges.
+Technical/realism: Match the original photo’s lighting direction, shadows, contrast, depth of field, and camera realism exactly.
+===END PROMPT===

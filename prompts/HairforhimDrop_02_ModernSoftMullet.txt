@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve the exact face likeness, facial proportions, expression, age, skin tone, eye color, head position, body posture, clothing, accessories, background, framing, and the total number of people.
+Transformation directives: Only transform the hair of the largest_face subject into a modern soft mullet: tight tapered sides, longer textured length in the back, and messy layered texture on top with natural strand definition and movement. Keep the hairline and sideburn boundaries realistic, barber-fresh, and proportional to head size. Keep all other people unchanged in the background; only the largest_face subject’s hair changes.
+Negatives: Do not change the face, eyebrows, facial hair, or skin; no “stuck-on” hair, no chunky plastic strands, no unnatural volume spikes, no leftover original hairstyle visible. No hair overlapping the eyes unnaturally or warping the ears/forehead. No hands/arms from other people touching the main subject; only the subject’s own hands may be visible. No extra limbs, no face merges, no duplication artifacts.
+Technical/realism: Match the original photo’s lighting direction, shadows, contrast, depth of field, and camera realism exactly.
+===END PROMPT===

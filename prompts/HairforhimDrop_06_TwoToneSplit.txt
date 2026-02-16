@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve the exact face likeness, facial proportions, expression, age, skin tone, eye color, head position, body posture, clothing, accessories, background, framing, and the total number of people.
+Transformation directives: Only transform the hair color of the largest_face subject into a clean two-tone split dye down the middle: one side deep black and the other side silver-white, with a sharp separation line, realistic shine, and natural root behavior that still looks intentionally salon-done. Keep eyebrows, beard/mustache, and skin completely untouched for maximum contrast. Keep all other people unchanged in the background; only the largest_face subject’s hair changes.
+Negatives: Do not change the face or any facial features; no color bleeding onto forehead/ears/skin, no mismatched split line drifting across the face, no uneven blotches, no “spray paint” look, no leftover original hair color visible. No hands/arms from other people interacting with the subject; only the subject’s own hands may be visible. No extra limbs, no face merges, no distortion.
+Technical/realism: Match the original photo’s lighting direction, shadows, contrast, depth of field, and camera realism exactly.
+===END PROMPT===
