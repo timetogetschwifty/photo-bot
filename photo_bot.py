@@ -1235,6 +1235,8 @@ def main() -> None:
             CallbackQueryHandler(select_effect, pattern="^effect_"),
             CallbackQueryHandler(buy_package, pattern="^buy_"),
             CallbackQueryHandler(cancel_payment, pattern="^cancel_payment$"),
+            # Allow reply keyboard text actions to recover after restart too.
+            *reply_kb,
         ],
         states={
             MAIN_MENU: [
