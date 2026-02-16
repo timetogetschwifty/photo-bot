@@ -59,6 +59,13 @@ logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(__file__)
 
+LOGO_PATH = None
+for _ext in ("jpg", "png", "webp"):
+    _p = os.path.join(BASE_DIR, "images", f"logo.{_ext}")
+    if os.path.exists(_p):
+        LOGO_PATH = _p
+        break
+
 
 def load_yaml_config() -> tuple[dict, dict]:
     """Load effects and categories from effects.yaml.
@@ -77,6 +84,14 @@ def load_yaml_config() -> tuple[dict, dict]:
     for cat_id, cat in data.get("categories", {}).items():
         if cat.get("enabled", True):
             categories[cat_id] = cat
+    # Auto-resolve category images from images/{cat_id}.{ext}
+    for cat_id, cat in categories.items():
+        if "image" not in cat:
+            for ext in ("jpg", "png", "webp"):
+                img_path = os.path.join(BASE_DIR, "images", f"{cat_id}.{ext}")
+                if os.path.exists(img_path):
+                    cat["image"] = img_path
+                    break
     categories = dict(sorted(categories.items(), key=lambda x: x[1].get("order", 999)))
 
     # Load effects (filter enabled, auto-resolve files, sort by order)
@@ -200,6 +215,15 @@ def back_to_browse_keyboard() -> InlineKeyboardMarkup:
 # ── Main Menu ────────────────────────────────────────────────────────────────
 
 
+async def send_main_menu(bot, chat_id, text, reply_markup):
+    """Send main menu with logo if available, otherwise text-only."""
+    if LOGO_PATH:
+        with open(LOGO_PATH, "rb") as img:
+            await bot.send_photo(chat_id=chat_id, photo=img, caption=text, reply_markup=reply_markup)
+    else:
+        await bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup)
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle /start command. Check for referral link or deep link."""
     user = update.effective_user
@@ -243,11 +267,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return BROWSING
     else:
-        # Normal start - just show main menu
-        await update.message.reply_text(
-            f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇",
-            reply_markup=reply_keyboard(),
-        )
+        # Normal start - show main menu with logo
+        text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
+        await send_main_menu(context.bot, update.effective_chat.id, text, reply_keyboard())
         return MAIN_MENU
 
 
@@ -263,16 +285,12 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
 
-    # Check if message has photo (can't edit photo messages to text)
+    # Delete old message and send fresh main menu with logo
     if query.message.photo:
         await query.message.delete()
-        await context.bot.send_message(
-            chat_id=user.id,
-            text=text,
-            reply_markup=reply_keyboard(),
-        )
     else:
-        await query.edit_message_text(text)
+        await query.delete_message()
+    await send_main_menu(context.bot, user.id, text, reply_keyboard())
     return MAIN_MENU
 
 
@@ -291,13 +309,9 @@ async def restart_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
     text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
 
-    # Delete old message and send fresh one
+    # Delete old message and send fresh main menu with logo
     await query.message.delete()
-    await context.bot.send_message(
-        chat_id=user.id,
-        text=text,
-        reply_markup=reply_keyboard(),
-    )
+    await send_main_menu(context.bot, user.id, text, reply_keyboard())
     return MAIN_MENU
 
 
@@ -466,8 +480,23 @@ async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     title, keyboard = build_browse_keyboard(category_id, credits)
 
-    # Check if message has photo (can't edit photo messages to text)
-    if query.message.photo:
+    cat_image = CATEGORIES.get(category_id, {}).get("image")
+
+    if cat_image and os.path.exists(cat_image):
+        # Send category with image
+        if query.message.photo:
+            await query.message.delete()
+        else:
+            await query.delete_message()
+        with open(cat_image, "rb") as img:
+            await context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo=img,
+                caption=title,
+                reply_markup=keyboard,
+            )
+    elif query.message.photo:
+        # Previous message had photo, can't edit to text — delete and resend
         await query.message.delete()
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -838,11 +867,8 @@ async def show_main_menu_fresh(update: Update, context: ContextTypes.DEFAULT_TYP
     db_user = db.get_user(user.id)
     credits = db_user["credits"] if db_user else 0
     name = user.first_name or "друг"
-    await context.bot.send_message(
-        chat_id=user.id,
-        text=f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇",
-        reply_markup=main_menu_keyboard(),
-    )
+    text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
+    await send_main_menu(context.bot, user.id, text, main_menu_keyboard())
     return MAIN_MENU
 
 

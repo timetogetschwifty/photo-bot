@@ -19,8 +19,6 @@ Scan and analyze current trends across these categories:
 
 5. Global viral content with local potential — international trends that haven't fully hit the Russian market yet but could be adapted
 
-6. Beauty / style / aesthetic trends — trending hairstyles, makeup looks, fashion aesthetics, beauty standards shifts. What specific looks are people searching for, trying, or reacting to? Include specific named trends (e.g., "wolf cut," "clean girl aesthetic," "mob wife makeup"), not vague categories. Focus on looks that people are curious to try on themselves.
-
 OUTPUT FORMAT:
 For each trend signal provide:
 
