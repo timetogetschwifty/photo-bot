@@ -1,0 +1,6 @@
+===PROMPT===
+Negatives: Do not change the person’s face identity or facial structure. No plastic skin, no heavy beauty filter, no exaggerated masculine/feminine alterations. Remove all other people completely, including hands, arms, or body parts from others. No text, no logos, no watermarks. No AI artifacts, no double pupils, no extra fingers.
+Transformation directives: Create a confident, print-friendly portrait suitable for business card layouts: slight natural angle (subtle turn), modern monochrome or muted color grade, clean backdrop, crisp detail. Only transform the sharpest-face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Compose with intentional negative space on one side (leave clean empty area) for future layout use, while keeping head-and-shoulders framing.
+Identity invariants: Preserve exact facial likeness, proportions, expression, and skin tone accuracy of the selected subject; keep them fully recognizable and unchanged.
+Technical/realism: Photorealistic, high-resolution, print-ready sharpness, controlled contrast, clean background edges.
+===END PROMPT===

@@ -1,0 +1,6 @@
+===PROMPT===
+Negatives: Do not change the person’s face identity or facial structure. No sexualized styling, no revealing content, no lingerie, no fetish aesthetics. No plastic skin, no heavy beauty filter. Remove all other people completely, including hands, arms, or body parts from others. No logos, no watermarks. Avoid medical claims visuals (no syringes, no clinical “doctor” props). No AI artifacts, no double pupils, no extra fingers.
+Transformation directives: Turn the selfie into a clean “wellness professional” avatar: spa-like neutral background (soft beige/stone tones), soft diffused light, slightly warmer but natural skin tones, calm and welcoming vibe. Only transform the largest-face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Add a minimal robe/towel-inspired aesthetic that is modest and non-revealing (covered shoulders/chest), with tasteful fabric texture and professional presentation.
+Identity invariants: Preserve exact facial likeness, proportions, expression, gaze, and skin tone accuracy of the selected subject; keep the face fully identical and recognizable.
+Technical/realism: Photorealistic, soft diffusion lighting, clean background, sharp facial detail with natural texture.
+===END PROMPT===

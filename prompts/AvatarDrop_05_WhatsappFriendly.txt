@@ -1,0 +1,6 @@
+===PROMPT===
+Negatives: Do not change the person’s face identity or facial structure. No plastic skin, no heavy beauty filters, no glam makeup, no surreal color grading. No text, no watermarks, no logos. Keep other people unchanged if present, but do not allow their hands/arms to intrude or interact with the main subject; no arms extending into the frame touching the subject. No AI artifacts, no double pupils, no extra fingers.
+Transformation directives: Produce a bright, approachable, family-safe portrait with soft daylight and natural skin texture. Only transform the largest-face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Simplify the background into a clean, uncluttered look while keeping the overall vibe natural and not over-stylized; keep other people unchanged in the background if they exist, but keep focus on the main subject.
+Identity invariants: Preserve exact face likeness, expression, skin tone accuracy, and defining features of the selected subject; keep them fully recognizable.
+Technical/realism: Photorealistic, gentle daylight look, clean color balance, sharp face detail without over-processing.
+===END PROMPT===

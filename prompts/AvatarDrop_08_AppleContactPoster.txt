@@ -1,0 +1,6 @@
+===PROMPT===
+Negatives: Do not change the person’s face identity or facial structure. No plastic skin, no heavy beauty filter, no extreme color grading. Remove all other people completely, including hands, arms, or body parts from others. No logos, no text, no watermarks. No AI artifacts, no double pupils, no extra fingers.
+Transformation directives: Create a clean iOS-style contact poster portrait: face-first framing, centered composition, smooth depth-of-field, tasteful contrast, and a soft color background that complements the subject’s skin tone (subtle pastel/neutral). Only transform the center-face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Keep the look premium, simple, and modern.
+Identity invariants: Preserve exact facial likeness, expression, gaze, and skin tone accuracy of the selected subject; keep them fully recognizable.
+Technical/realism: Photorealistic, clean separation, soft bokeh, high-resolution, polished but natural.
+===END PROMPT===

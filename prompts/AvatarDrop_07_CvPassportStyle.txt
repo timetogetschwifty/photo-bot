@@ -1,0 +1,6 @@
+===PROMPT===
+Negatives: Do not change the person’s face identity or facial structure. No glamour retouch, no heavy makeup, no plastic skin, no “beauty filter” look. No stylized color grades. No text, no watermarks, no logos. Remove all other people completely, including hands, arms, or body parts from others. No AI artifacts, no double pupils, no extra fingers.
+Transformation directives: Generate a clean, official-looking portrait suitable for CV/resume style: plain light background (off-white/light gray), even soft lighting, neutral and compliant-looking appearance. Only transform the largest-face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Correct head-and-shoulders framing, straight-on feel, tidy overall presentation while keeping realism.
+Identity invariants: Preserve exact facial likeness, proportions, expression, gaze, and skin tone accuracy of the selected subject; keep them fully recognizable and unchanged.
+Technical/realism: Photorealistic, even exposure, natural detail, sharp but not over-processed, clean edges against background.
+===END PROMPT===

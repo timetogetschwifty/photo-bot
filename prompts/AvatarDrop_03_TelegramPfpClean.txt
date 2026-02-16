@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve exact face likeness, facial proportions, expression, skin tone accuracy, hairstyle, and identity of the largest-face subject; keep clothing and accessories unchanged. Preserve the number of people only by removing others entirely (only the main subject remains).
+Transformation directives: Create a small-avatar-optimized crop and composition for a circular profile photo: face centered, eyes placed on the upper third, tight but flattering head-and-shoulders framing. Clean up the background into a simple, uncluttered look while keeping the subject natural. Add subtle contrast and clarity so the face reads clearly at tiny sizes, without over-sharpening.
+Negatives: Remove all other people completely, including hands, arms, or body parts from others. Only transform the largest-face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). No face reshaping, no plastic skin, no harsh HDR, no halos, no crunchy sharpening, no noise smearing, no artifacts, no extra fingers, no text or watermarks.
+Technical/realism: Match original lighting and shadows for natural integration while optimizing sharpness for small-size readability.
+===END PROMPT===

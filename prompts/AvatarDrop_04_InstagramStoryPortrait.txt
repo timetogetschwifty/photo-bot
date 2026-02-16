@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve exact facial likeness, identity, facial structure, expression, and skin tone of the sharpest-face subject; keep the person recognizable with natural skin texture. Keep the number of people the same while blurring any other people present into the background.
+Transformation directives: Create a high-contrast editorial portrait optimized for 9:16 story format, with a slightly cinematic color grade and a clean vignette. Only transform the sharpest-face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected) and keep them crisp while blurring others. Replace the background with a stylish but minimal look such as a smooth wall, soft gradient backdrop, or subtle city bokeh that feels modern and magazine-like.
+Negatives: No face reshaping, no plastic skin, no heavy beauty filter, no surreal colors, no extreme film grain, no banding. No extra people added. No hands/arms from other people entering near the subject or touching the subject. No AI artifacts, no double pupils, no extra fingers, no watermarks.
+Technical/realism: Cinematic but realistic contrast, tasteful vignette, clean editorial color grading, sharp subject separation, high resolution in 9:16 framing.
+===END PROMPT===

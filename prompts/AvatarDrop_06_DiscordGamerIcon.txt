@@ -1,0 +1,6 @@
+===PROMPT===
+Identity invariants: Preserve exact facial likeness, facial proportions, expression, and identity of the center-face subject; keep them fully recognizable with natural facial structure. Preserve hairstyle and key defining features.
+Transformation directives: Create a bold, high-clarity portrait icon that pops at small sizes: add neon rim light accents (purple/blue), slightly higher clarity on edges, and a simple smooth gradient background that complements the neon lighting. Only transform the center-face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Remove all other people completely so the icon is clean and focused.
+Negatives: Remove all other people completely, including hands, arms, or body parts from others. No face reshaping, no plastic skin, no anime conversion, no extreme saturation, no glitch distortions, no heavy noise, no text, no watermarks. No AI artifacts, no double pupils, no extra fingers.
+Technical/realism: Keep it realistic-photographic with tasteful neon lighting, crisp details, and clean background gradients suitable for small avatars.
+===END PROMPT===
