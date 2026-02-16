@@ -141,7 +141,7 @@ Transform top [max_subjects] subjects by largest_face > sharpest_face > center_f
 
 PART 4: FACE HANDLING (Mode-Specific)
 
-Copy exact language from input for MODIFY/HYBRID features. No rewriting, no softening.
+Preserve the INTENT and SPECIFICITY of input features. Do not soften ("pronounced" → "heavier") or generalize ("5 specific changes" → "some changes"). You MAY rephrase for clarity when the original wording would be grammatically awkward or ambiguous as a generation instruction — but never reduce the degree or detail of modification.
 
 IF Face Treatment = PRESERVE:
 Identity invariants: Preserve exact facial features, face shape, and likeness of every person. Keep skin tone, facial proportions, identity completely unchanged. Only [artistic rendering / background / clothing] changes, NOT the face.
@@ -178,8 +178,16 @@ UX NOTE AND SELF-AUDIT FORMAT:
 - These sections are developer metadata, not sent to model
 - Use bullet points for readability in these sections
 
+BATCH INPUT:
+If multiple ideas are provided, output each one as a separate numbered block.
+Start each with:
+
+=== IDEA [number]: [Name from field 1] ===
+
+Then output the full ===PROMPT===, ===UX NOTE===, and ===SELF-AUDIT=== structure for that idea before moving to the next.
+
 OUTPUT STRUCTURE:
-You must output exactly this structure:
+You must output exactly this structure (per idea):
 
 ===PROMPT===
 [Plaintext prompt with inline-labeled sections, written in English]
@@ -189,13 +197,6 @@ You must output exactly this structure:
 Best input (RU): [what photo type works best, in Russian]
 Avoid: [what inputs produce poor results]
 Menu description (RU): [one sentence Russian]
-Edge case handling:
-- Group photos: [specific behavior based on Subject Handling]
-- Sitting pose: [how handled if transformation needs standing]
-- Hands from others: [removal for SOLO]
-- No/partial face: [expected behavior — if no face detected, backend skips transformation and notifies user; describe degradation for partial face]
-- Low quality: [enhancement approach or skip]
-- Children: [age-appropriate behavior; no adult-themed styling, keep clothing neutral, avoid weapons/alcohol/gambling references; if transformation is inherently adult-themed, specify: "Skip transformation for minors, notify user"]
 ===END UX NOTE===
 
 ===SELF-AUDIT PASSED===
@@ -250,16 +251,10 @@ CONTENT CHECKS:
 - Exact input language preserved (no softening for MODIFY/HYBRID)
 - Every MUST-REMOVE item in Negatives section
 
-SAFETY CHECKS:
-- Children edge case addressed in UX NOTE
-- No/partial face edge case references backend gate
-- No adult-themed content applied to minors
-
 FORMAT CHECKS:
 - Plaintext with inline labels (no markdown in prompt)
 - UX NOTE and SELF-AUDIT may use bullets
 - Wrapped in ===PROMPT=== delimiters
-- UX NOTE addresses all 6 edge cases
 
 ---
 

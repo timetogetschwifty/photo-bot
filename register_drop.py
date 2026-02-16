@@ -23,7 +23,7 @@ EFFECTS_YAML = os.path.join(BASE_DIR, "effects.yaml")
 PROMPTS_DIR = os.path.join(BASE_DIR, "prompts")
 IMAGES_DIR = os.path.join(BASE_DIR, "images")
 
-TITLE_RE = re.compile(r"Idea\s+(\d+)\s*[—\-–]\s*(.+)", re.IGNORECASE)
+TITLE_RE = re.compile(r"=+\s*IDEA\s+(\d+)\s*:\s*(.+?)\s*=+", re.IGNORECASE)
 MENU_DESC_RE = re.compile(r"Menu description \(RU\):\s*(.+)")
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
@@ -33,20 +33,18 @@ def parse_ideas_with_tips(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    chunks = re.split(r"\u2E3B+", content)
+    # Find all idea headers, then extract chunks between them
+    title_matches = list(TITLE_RE.finditer(content))
     ideas = []
 
-    for chunk in chunks:
-        chunk = chunk.strip()
-        if not chunk:
-            continue
-
-        title_match = TITLE_RE.search(chunk)
-        if not title_match:
-            continue
-
+    for i, title_match in enumerate(title_matches):
         number = int(title_match.group(1))
         name = title_match.group(2).strip()
+
+        # Chunk runs from this title to the next title (or end of file)
+        start = title_match.start()
+        end = title_matches[i + 1].start() if i + 1 < len(title_matches) else len(content)
+        chunk = content[start:end]
 
         menu_match = MENU_DESC_RE.search(chunk)
         tips = menu_match.group(1).strip() if menu_match else ""
@@ -57,9 +55,11 @@ def parse_ideas_with_tips(filepath):
 
 
 def sanitize_name(name):
-    """Convert 'LinkedIn Headshot' -> 'LinkedInHeadshot'."""
+    """Convert 'LinkedIn Headshot Studio' -> 'LinkedInHeadshotStudio' (first 3 words only)."""
     parts = re.split(r"[^a-zA-Z0-9]+", name)
-    return "".join(p.capitalize() for p in parts if p)
+    # Take only first 3 words to keep filenames short
+    parts = [p for p in parts if p][:3]
+    return "".join(p.capitalize() for p in parts)
 
 
 def get_folder_label(folder_path):

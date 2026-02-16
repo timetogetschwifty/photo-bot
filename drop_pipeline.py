@@ -30,7 +30,7 @@ SAFETY_SETTINGS = [
 ]
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
-TITLE_RE = re.compile(r"Idea\s+(\d+)\s*[—\-–]\s*(.+)", re.IGNORECASE)
+TITLE_RE = re.compile(r"=+\s*IDEA\s+(\d+)\s*:\s*(.+?)\s*=+", re.IGNORECASE)
 PROMPT_RE = re.compile(r"(===PROMPT===.*?===END PROMPT===)", re.DOTALL)
 
 
@@ -42,21 +42,20 @@ def parse_ideas(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Split on THREE-EM DASH (⸻) or similar long dashes
-    chunks = re.split(r"\u2E3B+", content)
+    # Find all idea headers, then extract chunks between them
+    title_matches = list(TITLE_RE.finditer(content))
+    if not title_matches:
+        return []
 
     ideas = []
-    for chunk in chunks:
-        chunk = chunk.strip()
-        if not chunk:
-            continue
-
-        title_match = TITLE_RE.search(chunk)
-        if not title_match:
-            continue
-
+    for i, title_match in enumerate(title_matches):
         number = int(title_match.group(1))
         name = title_match.group(2).strip()
+
+        # Chunk runs from this title to the next title (or end of file)
+        start = title_match.start()
+        end = title_matches[i + 1].start() if i + 1 < len(title_matches) else len(content)
+        chunk = content[start:end]
 
         prompt_match = PROMPT_RE.search(chunk)
         if not prompt_match:
@@ -70,10 +69,12 @@ def parse_ideas(filepath):
 
 
 def sanitize_name(name):
-    """Convert 'LinkedIn Headshot' -> 'LinkedInHeadshot'."""
+    """Convert 'LinkedIn Headshot Studio' -> 'LinkedInHeadshotStudio' (first 3 words only)."""
     # Split on non-alphanumeric, capitalize each part, join
     parts = re.split(r"[^a-zA-Z0-9]+", name)
-    return "".join(p.capitalize() for p in parts if p)
+    # Take only first 3 words to keep filenames short
+    parts = [p for p in parts if p][:3]
+    return "".join(p.capitalize() for p in parts)
 
 
 def get_folder_label(folder_path):

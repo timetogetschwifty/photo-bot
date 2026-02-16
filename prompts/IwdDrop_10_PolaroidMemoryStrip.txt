@@ -1,0 +1,6 @@
+===PROMPT===
+Negatives: Remove original background completely; no real names, no personal data, no addresses, no watermarks. No extra people: remove all other people completely, including hands/arms/body parts from others. No identity change, no facial distortion, no extra limbs, no unreadable scribbles, no messy collage overlaps that cover the face.
+Transformation directives: Create a 3-frame Polaroid strip collage derived from the single input photo: Frame 1 clean neutral grade, Frame 2 soft black-and-white, Frame 3 warm glow grade. Arrange them vertically like a photobooth strip with authentic Polaroid borders, slight paper texture, tape corners, and a desk surface underneath. Add tiny handwritten-style captions under each frame: “today”, “tonight”, “her day”, keeping them generic and short.
+Identity invariants: Preserve the exact face likeness, facial proportions, gaze, expression, skin tone accuracy, age, and identity of the subject across all three frames. Only transform the largest_face subject; if there is a tie, choose by largest_face > sharpest_face > center_face > first detected.
+Technical/realism: Realistic instant-film print look, subtle dust and paper grain, consistent facial detail across frames, clean layout alignment, high resolution with crisp readable small captions.
+===END PROMPT===

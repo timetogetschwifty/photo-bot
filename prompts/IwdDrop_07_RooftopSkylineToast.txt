@@ -1,0 +1,6 @@
+===PROMPT===
+Negatives: Remove original background entirely; no dangerous rooftop edges, no sitting/standing on ledges, no unsafe railing gaps. No alcohol branding, no beer/wine labels, no recognizable city landmarks, no readable signage, no watermarks. No extra people: keep other people unchanged in background_only if present, but no interaction; no hands/arms from others holding the glass. No identity change, no facial distortion, no extra limbs.
+Transformation directives: Create an evening rooftop scene with warm city lights, gentle wind cues, and cozy string lights. Show the subject holding a generic sparkling drink glass (non-branded, non-labeled) with celebratory vibe; keep it visually like sparkling water or a generic fizz, not a branded product. The mood should be cinematic and cozy, “wish you were here” energy, with soft bokeh and warm tones.
+Identity invariants: Preserve the exact face likeness, facial proportions, gaze, expression, skin tone accuracy, age, and identity of the subject. Only transform the sharpest_face subject; if there is a tie, choose by largest_face > sharpest_face > center_face > first detected.
+Technical/realism: Photorealistic golden-hour-to-night transition lighting, warm highlights, natural shadows, mild film grain, high resolution, safe and believable rooftop staging.
+===END PROMPT===

@@ -79,11 +79,11 @@ Generate 10 transformation ideas. If DIVERSE mode, spread across at least 4 of t
 - Social bait — designed to be sent TO someone or compared WITH someone. Couple/friend transformations, "send this to your group chat" energy, results that start conversations.
 - Trending looks / style — specific trending hairstyles, makeup, aesthetics, fashion that people are curious about but haven't tried IRL. The value is "see it on yourself before you commit." Must be a SPECIFIC named trend, not a vague style.
 
-REQUIRED DISTRIBUTION:
-- Minimum 8 PRESERVE transformations
-- Maximum 1 HYBRID transformation
-- Maximum 1 MODIFY transformation
-- Adjust only if trends strongly demand different distribution
+DEFAULT DISTRIBUTION:
+- Most ideas should be PRESERVE (typically 7-9 out of 10)
+- HYBRID and MODIFY are allowed when the concept genuinely requires them
+- If you use more than 2 HYBRID or 2 MODIFY, explain why in a brief note after the list
+
 
 For each idea provide all 7 fields defined in the OUTPUT FORMAT section at the bottom of this prompt.
 
@@ -221,18 +221,6 @@ If GROUP, specify:
 
 ---
 
-UNIQUENESS CHECK:
-
-Check against existing transformations:
-- similar_to_existing: yes / no
-- reference_name: if yes, name the existing transformation it resembles
-
-If similar to existing:
-- Either iterate to make it unique OR
-- Explain how it differs meaningfully from the existing transformation
-
----
-
 QUALITY GATE:
 
 After generating all 10 ideas, check the full list:
@@ -281,6 +269,8 @@ STRICT FORMAT RULES:
 - Each field must use the exact label shown (e.g., "1. Name:", "2. What it does:")
 - Conditional subfields (marked with "If MODIFY", "If HYBRID", etc.) are only included when their condition is true — otherwise omit them entirely
 - "What it does" must be 2-3 sentences maximum, not a multi-paragraph description
+- LANGUAGE REQUIREMENT: Output ALL fields in English only
+
 
 For each transformation idea, output:
 
@@ -310,8 +300,5 @@ Idea [number]
    - [If GROUP] Max subjects: [recommended 4]
    - [If GROUP] Identity priority: [preserve each person separately; no merging; consistent styling]
 
-7. Uniqueness Check:
-   - Similar to existing: [yes / no]
-   - [If yes] Reference name: [existing transformation name]
 
-FINAL REMINDER: Exactly 7 fields, numbered 1-7, in the exact order above. Nothing added, nothing removed, nothing renamed.
+FINAL REMINDER: Exactly 6 fields, numbered 1-6, in the exact order above. Nothing added, nothing removed, nothing renamed.

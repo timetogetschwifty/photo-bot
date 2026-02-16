@@ -173,17 +173,6 @@ If GROUP, specify:
 - max_subjects: recommended 4 (quality/performance threshold)
 - identity_priority: "preserve each person's identity separately; no merging; consistent styling"
 
----
-
-UNIQUENESS CHECK:
-
-Check against existing transformations:
-- similar_to_existing: yes / no
-- reference_name: if yes, name the existing transformation it resembles
-
-If similar to existing:
-- Either iterate to make it unique OR
-- Explain how it differs meaningfully from the existing transformation
 
 ---
 
@@ -219,6 +208,7 @@ STRICT FORMAT RULES:
 - Each field must use the exact label shown (e.g., "1. Name:", "2. What it does:")
 - Conditional subfields (marked with "If MODIFY", "If HYBRID", etc.) are only included when their condition is true — otherwise omit them entirely
 - "What it does" must be 2-3 sentences maximum, not a multi-paragraph description
+- LANGUAGE REQUIREMENT: Output ALL fields in English only
 
 Output:
 
@@ -248,8 +238,5 @@ Idea
    - [If GROUP] Max subjects: [recommended 4]
    - [If GROUP] Identity priority: [preserve each person separately; no merging; consistent styling]
 
-7. Uniqueness Check:
-   - Similar to existing: [yes / no]
-   - [If yes] Reference name: [existing transformation name]
 
-FINAL REMINDER: Exactly 7 fields, numbered 1-7, in the exact order above. Nothing added, nothing removed, nothing renamed.
+FINAL REMINDER: Exactly 6 fields, numbered 1-6, in the exact order above. Nothing added, nothing removed, nothing renamed.
