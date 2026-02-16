@@ -621,7 +621,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("💳 Купить заряды", callback_data="menu_store")],
             [InlineKeyboardButton("👥 Пригласить друга", callback_data="menu_referral")],
-            [InlineKeyboardButton("⬅️ Главное меню", callback_data="main_menu")],
+            [InlineKeyboardButton("⬅️ Главное меню", callback_data="back_to_main")],
         ])
 
         await update.message.reply_text(
@@ -870,6 +870,33 @@ async def show_main_menu_fresh(update: Update, context: ContextTypes.DEFAULT_TYP
     text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
     await send_main_menu(context.bot, user.id, text, main_menu_keyboard())
     return MAIN_MENU
+
+
+async def recover_stale_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Recover from stale inline callbacks after deploy/restart.
+    Triggered only when callback was not handled by ConversationHandler.
+    """
+    query = update.callback_query
+    if not query:
+        return
+
+    # Acknowledge click quickly so user doesn't see a hanging spinner.
+    await query.answer("Бот обновился, открываю меню...")
+
+    user = update.effective_user
+    db_user = db.get_user(user.id)
+    credits = db_user["credits"] if db_user else 0
+    name = user.first_name or "друг"
+    text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
+
+    # Old inline messages may be photo/text; deleting is the safest cross-type behavior.
+    try:
+        await query.message.delete()
+    except Exception:
+        pass
+
+    await send_main_menu(context.bot, user.id, text, reply_keyboard())
 
 
 async def pre_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1195,6 +1222,19 @@ def main() -> None:
         entry_points=[
             CommandHandler("start", start),
             CommandHandler("admin", admin_command),
+            # Allow old inline buttons to work even after bot restarts.
+            CallbackQueryHandler(restart_bot, pattern="^restart$"),
+            CallbackQueryHandler(back_to_browse, pattern="^back_to_browse$"),
+            CallbackQueryHandler(show_browse_root, pattern="^(menu_create|browse_root)$"),
+            CallbackQueryHandler(show_store, pattern="^menu_store$"),
+            CallbackQueryHandler(show_promo_input, pattern="^menu_promo$"),
+            CallbackQueryHandler(show_referral, pattern="^menu_referral$"),
+            CallbackQueryHandler(show_about, pattern="^menu_about$"),
+            CallbackQueryHandler(show_main_menu, pattern="^(back_to_main|main_menu)$"),
+            CallbackQueryHandler(browse_category, pattern="^cat_"),
+            CallbackQueryHandler(select_effect, pattern="^effect_"),
+            CallbackQueryHandler(buy_package, pattern="^buy_"),
+            CallbackQueryHandler(cancel_payment, pattern="^cancel_payment$"),
         ],
         states={
             MAIN_MENU: [
@@ -1275,6 +1315,8 @@ def main() -> None:
     )
 
     app.add_handler(conv_handler)
+    # Fallback recovery for stale/unknown callback_data after deploys.
+    app.add_handler(CallbackQueryHandler(recover_stale_callback))
 
     # PreCheckoutQueryHandler must be at app level
     app.add_handler(PreCheckoutQueryHandler(pre_checkout))
