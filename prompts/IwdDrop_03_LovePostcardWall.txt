@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the main subject’s face, identity, skin tone, age, or expression. No unreadable scribbles; postcards must have legible “I love you” messages (varied languages) without brand logos. No creepy or distorted faces in the background. No extra limbs, extra fingers, or warped pin/string geometry. No modern neon signage; keep the room cozy and warm.
+
+Transformation directives: Build a cozy indoor room scene where the wall behind the subject is fully covered in pinned postcards that say “I love you” in different languages and handwriting styles. Include believable details: lipstick marks, postage stamps, torn edges, tape corners, push pins, and a few postcards slightly overlapping. Add warm string lights draped across the wall with gentle glow and small bokeh highlights. Only transform the sharpest_face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Blur all other people in the background while keeping the main subject sharp; do not let other people’s hands/arms interact with the subject.
+
+Identity invariants: Preserve the sharpest_face subject’s exact facial likeness, facial proportions, gaze, expression, hairstyle, and body posture. Keep their identity fully unchanged; the transformation is the environment and props, not the face.
+
+Technical/realism: Photorealistic cozy interior, warm color temperature, soft falloff lighting, fine paper texture on postcards, clean compositing around subject edges.
+===END PROMPT===

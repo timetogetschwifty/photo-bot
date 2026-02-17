@@ -25,11 +25,25 @@ IMAGES_DIR = os.path.join(BASE_DIR, "images")
 
 TITLE_RE = re.compile(r"=+\s*IDEA\s+(\d+)\s*:\s*(.+?)\s*=+", re.IGNORECASE)
 MENU_DESC_RE = re.compile(r"Menu description \(RU\):\s*(.+)")
+BEST_INPUT_RE = re.compile(r"Best input \(RU\):\s*\n((?:\s*•.*\n?)+)", re.MULTILINE)
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
+def normalize_quotes(text):
+    """Replace curly quotes with straight quotes to avoid IDE warnings."""
+    replacements = {
+        '"': '"',  # Left double quote
+        '"': '"',  # Right double quote
+        ''': "'",  # Left single quote
+        ''': "'",  # Right single quote
+    }
+    for curly, straight in replacements.items():
+        text = text.replace(curly, straight)
+    return text
+
+
 def parse_ideas_with_tips(filepath):
-    """Parse ideas file, return list of (number, name, menu_description)."""
+    """Parse ideas file, return list of (number, name, menu_description, best_input)."""
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -47,9 +61,22 @@ def parse_ideas_with_tips(filepath):
         chunk = content[start:end]
 
         menu_match = MENU_DESC_RE.search(chunk)
-        tips = menu_match.group(1).strip() if menu_match else ""
+        tips = normalize_quotes(menu_match.group(1).strip()) if menu_match else ""
 
-        ideas.append((number, name, tips))
+        # Extract best_input bullets
+        best_input_match = BEST_INPUT_RE.search(chunk)
+        if best_input_match:
+            # Extract bullet points and join them with newline
+            bullets = best_input_match.group(1).strip()
+            # Clean up: remove bullet points and extra whitespace
+            best_input = bullets.replace("•", "").strip()
+            # Join multiple lines into one, separated by semicolons for readability
+            best_input = "; ".join(line.strip() for line in best_input.split("\n") if line.strip())
+            best_input = normalize_quotes(best_input)
+        else:
+            best_input = ""
+
+        ideas.append((number, name, tips, best_input))
 
     return ideas
 
@@ -140,7 +167,7 @@ def main():
 
     effects_to_add = []
 
-    for i, (number, name, tips) in enumerate(ideas):
+    for i, (number, name, tips, best_input) in enumerate(ideas):
         effect_id = build_effect_id(number, folder_label, name)
         order = i + 1  # each drop/category starts from 1
 
@@ -151,6 +178,8 @@ def main():
 
         print(f"  {number}) {effect_id}")
         print(f"     Tips: {tips}")
+        if best_input:
+            print(f"     Best input: {best_input[:60]}...")
 
         label = input(f"     Label: ").strip()
         if not label:
@@ -165,6 +194,7 @@ def main():
             "order": order,
             "label": label,
             "tips": tips,
+            "best_input": best_input,
             "category": category,
             "enabled": enabled,
             "has_txt": has_txt,
@@ -250,11 +280,13 @@ def main():
 
         # Build YAML entry
         tips_escaped = e["tips"].replace('"', '\\"')
+        best_input_escaped = e["best_input"].replace('"', '\\"')
         yaml_lines.append(f"  {eid}:")
         yaml_lines.append(f"    enabled: {'true' if e['enabled'] else 'false'}")
         yaml_lines.append(f"    order: {e['order']}")
         yaml_lines.append(f'    label: "{e["label"]}"')
         yaml_lines.append(f'    tips: "{tips_escaped}"')
+        yaml_lines.append(f'    best_input: "{best_input_escaped}"')
         yaml_lines.append(f"    category: {e['category']}")
         yaml_lines.append("")
 

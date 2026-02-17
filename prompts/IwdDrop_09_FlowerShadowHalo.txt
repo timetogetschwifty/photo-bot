@@ -1,6 +1,0 @@
-===PROMPT===
-Identity invariants: Preserve exact face likeness, facial proportions, expression, gaze direction, head position, body posture, clothing, accessories, background geometry, and number of people. Only transform the sharpest_face subject; if there is a tie, choose by largest_face > sharpest_face > center_face > first detected. Blur all other people in background while keeping the main subject sharp.
-Transformation directives: Keep the original photo content but add a projected “flower shadow” pattern across the wall/background and a soft halo light behind the subject’s head like a studio gobo effect. Apply a warm, cinematic color grade that flatters skin tones while keeping facial proportions natural and unchanged. Enhance contrast slightly and add gentle glow around highlights without smoothing skin into plastic.
-Negatives: No identity change, no facial proportion changes, no reshaping eyes/nose/lips, no heavy beautification, no extra limbs, no duplicated faces. No hands/arms from other people interacting with the subject; only the subject’s own hands may be visible. No harsh banding, no posterization, no obvious AI artifacts.
-Technical/realism: Cinematic warm palette, realistic shadow projection edges, subtle vignette, mild film grain, consistent light direction with believable falloff.
-===END PROMPT===

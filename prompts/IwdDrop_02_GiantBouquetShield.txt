@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the main subject’s face, identity, skin tone, age, or expression. No extra limbs, extra hands, duplicated fingers, or warped bouquet geometry. No tiny bouquet; it must be absurdly huge and cinematic. No messy petals clipping through the subject’s body. No other people interacting with the bouquet; no hands/arms from other people entering the frame. No muddy lighting; avoid flat, low-contrast look.
+
+Transformation directives: Transform the bouquet into an absurdly huge, cinematic arrangement of peonies, roses, and eucalyptus that the subject holds like a heroic shield, covering roughly half of the body. Make petals hyper-detailed, slightly larger than life, with crisp edges and layered depth; eucalyptus leaves should be matte and realistic. Use dramatic studio lighting with strong key light and crisp shadows that emphasize the bouquet’s volume while keeping the subject readable. Only transform the center_face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Keep other people unchanged in the background only; do not stylize them.
+
+Identity invariants: Preserve the center_face subject’s exact facial likeness, facial structure, gaze, expression, hairline, and body proportions. Preserve the subject’s pose and natural hand placement, adjusting only as needed to convincingly support the giant bouquet shield without changing identity.
+
+Technical/realism: Photorealistic, high dynamic range, sharp focus on subject and bouquet, clean separation edges, realistic contact shadows where bouquet meets hands and body.
+===END PROMPT===

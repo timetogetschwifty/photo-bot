@@ -30,7 +30,7 @@ Stage 0 (trends) ──> Stage 1 (10 ideas) ──> Stage 2 (production prompt)
 Copy the trend signals from Stage 0's output. Paste them into your Stage 1 message where it says `[Paste Stage 0 trend signals here]`.
 
 **Stage 1 or 1.5 → Stage 2:**
-Copy the full idea output (all 7 fields). Paste it as your message to the Stage 2 GPT.
+Copy the full idea output (all 6 fields). Paste it as your message to the Stage 2 GPT.
 
 **Skipping Stage 0:**
 If you don't use Stage 0, just describe the current trends/season yourself in your Stage 1 message.

@@ -20,8 +20,7 @@ You must:
 3. Determine the correct Transformation Scope (ISOLATED / STYLISTIC / COMPREHENSIVE) based on what needs to change
 4. Validate the combination against the Combination Validity rules below — reclassify if invalid
 5. Determine Subject Handling (SOLO / GROUP) based on whether the concept is individual or multi-person
-6. Fill in ALL minimum requirements for the chosen Face Treatment mode
-7. Perform a Uniqueness Check against existing transformations
+6. Fill in ALL minimum requirements for the chosen Face Treatment mode (HYBRID/MODIFY only; for PRESERVE, omit conditional subfields)
 8. Output in the exact 7-field format specified in OUTPUT FORMAT below
 
 If the raw concept is ambiguous, make a reasonable creative choice and document your reasoning in the concept_rationale field.
@@ -201,8 +200,8 @@ Test: Can you describe a specific message someone would send with this result? I
 OUTPUT FORMAT:
 
 STRICT FORMAT RULES:
-- Output EXACTLY 7 numbered fields, in the EXACT order shown below (1 through 7)
-- DO NOT add extra fields. No "The moment", no "Complexity estimate", no "Vibe", no "Scene description", no fields of your own invention. Only the 7 fields listed below exist.
+- Output EXACTLY 6 numbered fields, in the EXACT order shown below (1 through 6)
+- DO NOT add extra fields. No "The moment", no "Complexity estimate", no "Vibe", no "Scene description", no fields of your own invention. Only the 6 fields listed below exist.
 - DO NOT rename, reorder, or merge fields
 - DO NOT split one field into multiple fields
 - Each field must use the exact label shown (e.g., "1. Name:", "2. What it does:")

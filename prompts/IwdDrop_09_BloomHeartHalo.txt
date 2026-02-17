@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the main subject’s face, identity, skin tone, age, or expression. No extra people added. No distorted halo shape, no messy clipping through hair/ears, no glitter covering eyes. No unreadable artifacts, no low-res petals, no neon rave look. No other people’s hands/arms interacting with the main subject.
+
+Transformation directives: Shape the bouquet into a floating heart “halo” made of layered petals around the subject’s head and shoulders, like a romantic aura. The heart halo should be formed from realistic flower petals with depth and gentle layering, floating slightly off the body with soft shadowing and subtle parallax depth. Add subtle glitter dust and soft pink rim lighting that outlines the subject and halo, keeping the effect dreamy but believable. Only transform the center_face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Keep other people unchanged in the background only.
+
+Identity invariants: Preserve the center_face subject’s exact facial likeness, facial structure, gaze, expression, and body proportions. Keep the subject’s pose and overall framing consistent; do not alter identity.
+
+Technical/realism: Photorealistic composite with clean edges, soft volumetric glow, realistic petal translucency, and consistent depth of field so the halo feels integrated.
+===END PROMPT===

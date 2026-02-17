@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the main subject’s face, identity, skin tone, age, or expression. No extra hands, no duplicated fingers, no warped envelope edges. No unreadable, mirrored, or misspelled wax seal text; the seal must clearly feature a tiny heart and the words “I love you” around the rim. No brand logos on the envelope. No other people’s hands/arms entering frame; only the subject’s own hands visible.
+
+Transformation directives: Create a romantic close-up scene where the subject is holding an elegant envelope with a deep red wax seal. The wax seal is stamped with a tiny heart in the center and “I love you” around the rim, embossed and glossy with realistic wax texture. Add warm candlelight reflections, soft bokeh in the background, and fine paper grain detail on the envelope, keeping the subject as the focal point. Only transform the largest_face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Blur all other people in the background while keeping the main subject sharp.
+
+Identity invariants: Preserve the largest_face subject’s exact facial likeness, facial structure, gaze, expression, and body proportions. Keep the subject recognizable as the same person; do not alter features.
+
+Technical/realism: Photorealistic macro-like detail, warm cinematic candlelight, smooth bokeh, accurate specular highlights on wax, and clean compositing around hands and envelope.
+===END PROMPT===

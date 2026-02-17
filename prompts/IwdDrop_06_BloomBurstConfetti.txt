@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change anyone’s face, identity, skin tone, age, or expression. No merging faces, no swapping identities, no “average face” effect. No extra limbs, duplicated hands, warped fingers, or petal blobs covering faces completely. No random text overlays or logos. Avoid harsh digital noise and avoid plastic-looking petals.
+
+Transformation directives: Add a comedic “flower confetti cannon” effect where bouquet petals explode outward mid-frame like a celebration popper, with visible motion blur on flying petals and sparkly highlights catching the light. Keep everyone’s poses the same, but make the moment feel like they were just showered in bouquet petals, with a few petals in foreground for depth and a few on clothing/hair for realism. Apply the effect consistently across all subjects, up to a maximum of 4 people, keeping their relative positions and interactions intact. If the photo contains more than 4 people, transform the top 4 subjects by largest_face > sharpest_face > center_face priority and blur remaining subjects slightly for shallow depth of field if they distract from the transformed group while keeping them recognizable in the background context.
+
+Identity invariants: Preserve each person’s identity separately. No merging of faces or identities, no changing facial structure, no altering expressions, and no changing the number of people. Maintain natural skin texture and consistent facial clarity for each subject.
+
+Technical/realism: Photorealistic composite with believable motion blur direction, accurate lighting on petals, crisp subject edges, and realistic depth layering so petals pass in front of and behind people.
+===END PROMPT===

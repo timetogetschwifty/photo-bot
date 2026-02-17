@@ -1,6 +1,0 @@
-===PROMPT===
-Negatives: Remove original background completely; no real brand names, no real perfume labels, no copyrighted logos, no magazine titles that match real publications, no watermarks. No extra people: remove all other people completely, including hands/arms/body parts from others. No identity change, no facial distortion, no over-smoothing skin, no extra fingers, no illegible typography blocks.
-Transformation directives: Convert the image into a luxurious perfume-ad style poster with a rich velvet backdrop and dramatic rim light. Add a bouquet arranged to match the subject’s dominant color palette (harmonize flowers with clothing/skin tone), positioned as a design element rather than covering the face. Create a clean typographic layout like a magazine spread using placeholder-style text only (e.g., “VELVET NIGHT”, “For her • 07.03”), with modern editorial spacing and alignment; keep text minimal.
-Identity invariants: Preserve the exact face likeness, facial proportions, gaze, expression, skin tone accuracy, age, and identity of the subject. Only transform the sharpest_face subject; if there is a tie, choose by largest_face > sharpest_face > center_face > first detected.
-Technical/realism: High-end studio advertising look, crisp edges, controlled contrast, subtle film grain, realistic velvet texture, print-ready poster clarity.
-===END PROMPT===

@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the main subject’s face, identity, skin tone, age, or expression. No warped poster text, no mirrored typography; the headline must clearly read “International Women’s Day • 8 March”. No copyrighted logos, no brand marks, no real campaign slogans. No extra limbs, facial distortion, or plastic skin. No other people’s hands/arms intruding; keep the layout clean.
+
+Transformation directives: Convert the image into a bold modern graphic poster with stylized florals framing the subject’s portrait. Use a modern color palette of cream, deep green, and coral, with clean typography reading “International Women’s Day • 8 March” in a crisp, legible font. Add a small “I love you” postcard motif as a corner sticker element that looks like a printed collage detail, subtle and tasteful. Only transform the sharpest_face subject (deterministic fallback if tied: largest_face > sharpest_face > center_face > first detected). Blur all other people in the background while keeping the main subject sharp and poster-focused.
+
+Identity invariants: Preserve the sharpest_face subject’s exact facial likeness, facial structure, gaze, expression, and body proportions, keeping them fully recognizable. Maintain the subject’s natural features; the transformation is graphic styling, framing, and typography, not the face.
+
+Technical/realism: High-resolution poster design look with clean vector-like edges, accurate color separation, consistent soft lighting on the portrait, and print-like texture without banding.
+===END PROMPT===

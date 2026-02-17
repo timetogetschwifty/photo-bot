@@ -4,7 +4,7 @@ CONTEXT:
 - Model: Gemini image generation (gemini-3-pro-image-preview)
 - Capabilities: style transfer, face-aware editing, background replacement, artistic filters, age/appearance modification, scene compositing
 - Current bot architecture: single photo input
-- No video generation, no animated output
+- No video generation, no animated output (ALL results must be a single still image).
 - Target audience: Russia, 15-45 y.o., heavy Telegram/VK/Instagram users
 - Distribution: users share results in chats, stories, channels
 
@@ -85,7 +85,7 @@ DEFAULT DISTRIBUTION:
 - If you use more than 2 HYBRID or 2 MODIFY, explain why in a brief note after the list
 
 
-For each idea provide all 7 fields defined in the OUTPUT FORMAT section at the bottom of this prompt.
+For each idea provide all 6 fields defined in the OUTPUT FORMAT section at the bottom of this prompt.
 
 ---
 
@@ -262,8 +262,8 @@ Test: Can you describe a specific message someone would send with this result? I
 OUTPUT FORMAT:
 
 STRICT FORMAT RULES:
-- Output EXACTLY 7 numbered fields per idea, in the EXACT order shown below (1 through 7)
-- DO NOT add extra fields. No "The moment", no "Complexity estimate", no "Vibe", no "Scene description", no fields of your own invention. Only the 7 fields listed below exist.
+- Output EXACTLY 6 numbered fields per idea, in the EXACT order shown below (1 through 6)
+- DO NOT add extra fields. No "The moment", no "Complexity estimate", no "Vibe", no "Scene description", no fields of your own invention. Only the 6 fields listed below exist.
 - DO NOT rename, reorder, or merge fields
 - DO NOT split one field into multiple fields
 - Each field must use the exact label shown (e.g., "1. Name:", "2. What it does:")
