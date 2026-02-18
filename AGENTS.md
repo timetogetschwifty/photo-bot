@@ -24,3 +24,8 @@ Codex entrypoint for `Photo bot/`.
   3. What to do next
 - Avoid jargon; if needed, explain it briefly.
 - Provide copy-paste-ready commands with exact paths when terminal steps are required.
+
+## Permissions
+
+- Ask for user confirmation before executing any bash/shell command.
+- Ask for user confirmation before editing or creating any file.

@@ -104,11 +104,11 @@ HYBRID — Recognizable as the user but with intentional facial modifications fo
 FACE TREATMENT SELECTION GUIDANCE:
 
 Use PRESERVE for:
-- Style changes (anime, oil painting, cyberpunk, vintage photo)
 - Background swaps (Paris, space, underwater, fantasy world)
 - Costume/clothing changes (superhero, historical outfit, professional attire)
-- Artistic filters (impressionist, pop art, sketch, cinematic)
-- Scene placement (movie poster, album cover, magazine cover)
+- Scene placement where face stays photographic (movie poster, magazine cover, wanted poster, album cover)
+- Photo-grade style changes (vintage photo filter, film grain, cinematic color grading — changes that don't alter the rendering medium of the face)
+- NOT for artistic medium changes (painting, anime, sketch) — see HYBRID
 
 Use MODIFY for:
 - Ancestors/descendants (caveman ancestor, Viking ancestor, your future child)
@@ -123,11 +123,17 @@ CRITICAL DISTINCTION:
 - Key signal: If concept uses "ancestor," "descendant," "future child," "past life" or implies GENETIC/EVOLUTIONARY/GENERATIONAL distance = MODIFY
 
 Use HYBRID for:
+- Artistic medium adaptation — face rendered in the same style as the rest of the image (oil painting, anime, watercolor, sketch, Ghibli, pixel art). Face keeps likeness but gains brushstrokes, cel shading, pencil texture, etc.
 - Moderate age progression/regression (plus or minus 10-20 years)
 - Style adaptation ("you as Cleopatra" where face adapts to era's beauty standards but stays recognizable)
 - Gender exploration (maintain some features, modify others)
 - Subtle feature modifications that serve the concept
 - Key test: Would someone recognize this as the same person? If yes = HYBRID. If no = MODIFY.
+
+CRITICAL DISTINCTION — artistic rendering:
+- "Movie poster with your photo" (face stays photographic, dramatic layout around it) = PRESERVE
+- "Oil painting portrait of you" (face rendered with brushstrokes, painterly skin) = HYBRID
+- Key signal: If the artistic style should transform HOW THE FACE LOOKS (brushstrokes, cel lines, pencil strokes on the face itself) = HYBRID. If the face stays photographic and only surroundings/layout change = PRESERVE.
 
 MINIMUM REQUIREMENTS:
 
@@ -164,7 +170,7 @@ Use STYLISTIC for:
 - Examples: Ghibli anime, oil painting, cyberpunk aesthetic, vintage photo, film noir
 - Characteristic: HOW the image looks changes, not WHAT it contains
 - Stage 2 needs: 1 paragraph (6-8 sentences) specifying style/rendering technique
-- Restriction: STYLISTIC pairs with PRESERVE (always) or HYBRID (rare, must justify)
+- Restriction: STYLISTIC pairs with PRESERVE (photo-grade style changes) or HYBRID (artistic medium adaptation)
 
 Use COMPREHENSIVE for:
 - Full scene construction requiring detailed specification
@@ -182,8 +188,8 @@ Before finalizing each idea, verify the Face Treatment + Transformation Scope co
 ISOLATED + PRESERVE = Valid
 ISOLATED + HYBRID = INVALID
 ISOLATED + MODIFY = INVALID
-STYLISTIC + PRESERVE = Valid
-STYLISTIC + HYBRID = Valid (rare — must justify why not COMPREHENSIVE)
+STYLISTIC + PRESERVE = Valid (photo-grade style changes only — vintage photo, film grain, color grading)
+STYLISTIC + HYBRID = Valid (artistic medium adaptation — painting, anime, sketch where face adapts to style)
 STYLISTIC + MODIFY = INVALID
 COMPREHENSIVE + PRESERVE = Valid
 COMPREHENSIVE + HYBRID = Valid
@@ -194,7 +200,7 @@ If you produce an INVALID combination: reclassify Transformation Scope to COMPRE
 Why these restrictions:
 - ISOLATED + MODIFY/HYBRID: ISOLATED changes a single element while preserving everything else. Face modification is a separate element — combining them creates two change targets, which is no longer "isolated."
 - STYLISTIC + MODIFY: Stylistic rendering changes HOW the image looks, not WHO is in it. Generating a different person requires specifying new features in detail — use COMPREHENSIVE instead.
-- STYLISTIC + HYBRID (rare): Allowed when the style itself implies subtle face adaptation (e.g., "anime style" naturally simplifies features). Must justify why this pairing serves the concept better than COMPREHENSIVE + HYBRID.
+- STYLISTIC + HYBRID: Standard path for artistic medium adaptation (painting, anime, sketch) where only the rendering style changes, not the scene. Use COMPREHENSIVE + HYBRID instead when the concept also requires a new environment, clothing, or props.
 
 ---
 

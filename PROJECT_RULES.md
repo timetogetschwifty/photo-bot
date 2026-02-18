@@ -83,6 +83,4 @@ Avoid prompt wording that commonly triggers Gemini safety blocks.
 - Keep credentials/tokens in `.env`.
 - Ensure `.env` and credential files are ignored by git.
 
-## Command Execution
 
-- Ask for user confirmation before executing any bash/shell command.

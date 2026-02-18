@@ -89,7 +89,7 @@ Required sections (4):
 4. Technical/realism: Color palette, lighting style, medium/texture
 
 Key constraints:
-- Face Treatment must be PRESERVE or HYBRID (rare)
+- Face Treatment must be PRESERVE (photo-grade style changes) or HYBRID (artistic medium adaptation — painting, anime, sketch)
 - If HYBRID: Identity invariants must include both preserved and modified features
 
 FOR COMPREHENSIVE TRANSFORMATIONS (2-3 paragraphs):
@@ -144,7 +144,7 @@ PART 4: FACE HANDLING (Mode-Specific)
 Preserve the INTENT and SPECIFICITY of input features. Do not soften ("pronounced" → "heavier") or generalize ("5 specific changes" → "some changes"). You MAY rephrase for clarity when the original wording would be grammatically awkward or ambiguous as a generation instruction — but never reduce the degree or detail of modification.
 
 IF Face Treatment = PRESERVE:
-Identity invariants: Preserve exact facial features, face shape, and likeness of every person. Keep skin tone, facial proportions, identity completely unchanged. Only [artistic rendering / background / clothing] changes, NOT the face.
+Identity invariants: Preserve exact facial features, face shape, and likeness of every person. Keep skin tone, facial proportions, identity completely unchanged. Face remains photographic. Only [background / clothing / scene composition] changes, NOT the face.
 
 IF Face Treatment = MODIFY:
 Combination check: MODIFY requires COMPREHENSIVE scope. If scope is ISOLATED or STYLISTIC, this is an invalid combination — do not proceed.
@@ -154,7 +154,7 @@ Identity invariants: Using original person's facial structure as [genetic/ancest
 Add to Negatives: Avoid keeping original face unchanged, no identical facial features.
 
 IF Face Treatment = HYBRID:
-Combination check: HYBRID requires COMPREHENSIVE or STYLISTIC (rare) scope. If scope is ISOLATED, this is an invalid combination — do not proceed.
+Combination check: HYBRID requires COMPREHENSIVE or STYLISTIC scope. If scope is ISOLATED, this is an invalid combination — do not proceed.
 
 Identity invariants: Preserve [EXACT INPUT FEATURES TO KEEP]. Modify [EXACT INPUT FEATURES TO CHANGE] to show [CONCEPT]. Result recognizable as original person but adapted. [EXACT INPUT RECOGNIZABILITY TEST].
 
@@ -222,7 +222,7 @@ MANDATORY FIRST CHECK:
 COMBINATION VALIDITY CHECK:
 - Face Treatment + Transformation Scope is a valid combination
 - If ISOLATED: Face Treatment must be PRESERVE
-- If STYLISTIC: Face Treatment must be PRESERVE or HYBRID (rare, justified)
+- If STYLISTIC: Face Treatment must be PRESERVE or HYBRID
 - If MODIFY: Transformation Scope must be COMPREHENSIVE
 
 STRUCTURE CHECKS:
@@ -299,7 +299,7 @@ YOUR TASK:
 Given transformation idea input, produce:
 
 1. Production prompt with inline-labeled sections (4 required: Identity invariants, Transformation directives, Negatives, Technical/realism), written in English
-2. UX note addressing all 6 edge cases (bullets allowed)
+2. UX note with best input, avoid, and menu description (bullets allowed)
 3. Self-audit confirming combination validity + all 4 required sections present + language check + mode-specific checks (bullets allowed)
 
 Work efficiently. Write prompt once, correctly, with inline labels for verifiable structure.

@@ -8,6 +8,7 @@ Usage:
     python register_drop.py "testing/Avatar Drop/avatar 10.txt"
     python register_drop.py "testing/Avatar Drop/avatar 10.txt" --dry-run
     python register_drop.py "testing/Avatar Drop/avatar 10.txt" --enabled false
+    python register_drop.py "testing/Trends 02_18/Trends0218.txt" --no-category
 """
 
 import argparse
@@ -32,10 +33,12 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 def normalize_quotes(text):
     """Replace curly quotes with straight quotes to avoid IDE warnings."""
     replacements = {
-        '"': '"',  # Left double quote
-        '"': '"',  # Right double quote
-        ''': "'",  # Left single quote
-        ''': "'",  # Right single quote
+        "\u201c": '"',  # Left double quote: “
+        "\u201d": '"',  # Right double quote: ”
+        "\u2018": "'",  # Left single quote: ‘
+        "\u2019": "'",  # Right single quote: ’
+        "\u00ab": '"',  # Left guillemet: «
+        "\u00bb": '"',  # Right guillemet: »
     }
     for curly, straight in replacements.items():
         text = text.replace(curly, straight)
@@ -99,15 +102,85 @@ def build_effect_id(number, folder_label, idea_name):
     return f"{folder_label}_{number:02d}_{sanitize_name(idea_name)}"
 
 
-def get_max_order(yaml_data):
-    """Find the highest order number in existing effects."""
+def sanitize_category_id(value):
+    """Normalize category id to lowercase snake_case."""
+    value = value.strip().lower()
+    value = re.sub(r"[^a-z0-9_]+", "_", value)
+    value = re.sub(r"_+", "_", value).strip("_")
+    return value
+
+
+def suggest_category_id(folder_name):
+    """Build category id suggestion from full folder name."""
+    return sanitize_category_id(folder_name)
+
+
+def resolve_category_id(folder_name, yaml_data, cli_category_id):
+    """Resolve target category interactively or from --category-id."""
+    categories = yaml_data.get("categories") or {}
+    suggested = suggest_category_id(folder_name)
+    if not suggested:
+        suggested = "new_category"
+
+    # CLI override
+    if cli_category_id:
+        if cli_category_id in categories:
+            return cli_category_id
+        normalized = sanitize_category_id(cli_category_id)
+        if not normalized:
+            print("Error: Invalid --category-id (empty after normalization).")
+            sys.exit(1)
+        if normalized != cli_category_id:
+            print(f"  Normalized category id: '{cli_category_id}' -> '{normalized}'")
+        return normalized
+
+    # Interactive selection
+    print("Available categories:")
+    if categories:
+        for idx, cat_id in enumerate(categories.keys(), start=1):
+            label = categories[cat_id].get("label", "")
+            print(f"  {idx}) {cat_id} — {label}")
+    else:
+        print("  (none)")
+    print(f"Suggested category id from folder '{folder_name}': {suggested}")
+    raw = input("Category (number or id, Enter = suggested): ").strip()
+
+    if not raw:
+        return suggested
+
+    if raw.isdigit() and categories:
+        idx = int(raw)
+        if 1 <= idx <= len(categories):
+            return list(categories.keys())[idx - 1]
+        print(f"Error: Invalid category number: {raw}")
+        sys.exit(1)
+
+    if raw in categories:
+        return raw
+
+    normalized = sanitize_category_id(raw)
+    if not normalized:
+        print("Error: Invalid category id (empty after normalization).")
+        sys.exit(1)
+    if normalized != raw:
+        print(f"  Normalized category id: '{raw}' -> '{normalized}'")
+    return normalized
+
+
+def get_max_order(yaml_data, category=None):
+    """Find the highest order number in existing effects for a given category.
+
+    category=None means top-level (no category) effects.
+    """
     max_order = 0
     effects = yaml_data.get("effects") or {}
     for effect in effects.values():
         if isinstance(effect, dict):
-            order = effect.get("order", 0)
-            if order > max_order:
-                max_order = order
+            eff_cat = effect.get("category")
+            if eff_cat == category:
+                order = effect.get("order", 0)
+                if order > max_order:
+                    max_order = order
     return max_order
 
 
@@ -131,7 +204,13 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Preview without modifying files")
     parser.add_argument("--enabled", default="true", choices=["true", "false"],
                         help="Register effects as enabled or disabled (default: true)")
+    parser.add_argument("--no-category", action="store_true",
+                        help="Register as top-level effects (no category)")
+    parser.add_argument("--category-id",
+                        help="Use existing/new category id explicitly (example: avatar)")
     args = parser.parse_args()
+    if args.no_category and args.category_id:
+        parser.error("Cannot use --category-id together with --no-category")
 
     ideas_path = os.path.abspath(args.ideas_file)
     if not os.path.exists(ideas_path):
@@ -141,7 +220,7 @@ def main():
     folder = os.path.dirname(ideas_path)
     folder_label = get_folder_label(folder)
     folder_name = os.path.basename(folder)
-    category = folder_name.split()[0].lower()
+    no_category = args.no_category
     enabled = args.enabled == "true"
 
     # Parse ideas for tips
@@ -157,11 +236,16 @@ def main():
     with open(EFFECTS_YAML, "r", encoding="utf-8") as f:
         yaml_data = yaml.safe_load(f)
 
-    max_order = get_max_order(yaml_data)
+    category = None if no_category else resolve_category_id(folder_name, yaml_data, args.category_id)
+
+    if no_category:
+        max_order = get_max_order(yaml_data, category=None)
+    else:
+        max_order = get_max_order(yaml_data, category=category)
 
     # Build effect entries and collect labels interactively
     print(f"\nRegister Drop: {folder_name} ({len(ideas)} effects)")
-    print(f"Category: {category}")
+    print(f"Category: {'(top-level)' if no_category else category}")
     print(f"Enabled: {enabled}")
     print()
 
@@ -169,7 +253,10 @@ def main():
 
     for i, (number, name, tips, best_input) in enumerate(ideas):
         effect_id = build_effect_id(number, folder_label, name)
-        order = i + 1  # each drop/category starts from 1
+        if no_category:
+            order = max_order + i + 1  # continue from last top-level effect
+        else:
+            order = i + 1  # each drop/category starts from 1
 
         # Check if already registered
         if yaml_data.get("effects") and effect_id in yaml_data["effects"]:
@@ -243,22 +330,23 @@ def main():
     with open(EFFECTS_YAML, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Check if category needs to be added
-    need_new_category = not yaml_data.get("categories") or category not in yaml_data["categories"]
-    if need_new_category:
-        cat_order = len(yaml_data.get("categories") or {}) + 1
-        cat_block = (
-            f"\n  {category}:\n"
-            f"    enabled: false\n"
-            f"    order: {cat_order}\n"
-            f'    label: "{folder_name}"\n'
-        )
-        # Insert before "# ── Effects" line
-        effects_marker = "# ── Effects"
-        if effects_marker in content:
-            pos = content.index(effects_marker)
-            content = content[:pos] + cat_block + "\n" + content[pos:]
-        print(f"  Created category: {category} (enabled: false — enable manually)")
+    # Check if category needs to be added (skip for --no-category)
+    if not no_category:
+        need_new_category = not yaml_data.get("categories") or category not in yaml_data["categories"]
+        if need_new_category:
+            cat_order = len(yaml_data.get("categories") or {}) + 1
+            cat_block = (
+                f"\n  {category}:\n"
+                f"    enabled: false\n"
+                f"    order: {cat_order}\n"
+                f'    label: "{folder_name}"\n'
+            )
+            # Insert before "# ── Effects" line
+            effects_marker = "# ── Effects"
+            if effects_marker in content:
+                pos = content.index(effects_marker)
+                content = content[:pos] + cat_block + "\n" + content[pos:]
+            print(f"  Created category: {category} (enabled: false — enable manually)")
 
     # Copy files and build YAML block
     yaml_lines = [f"\n  # ── {folder_name} ──"]
@@ -287,7 +375,10 @@ def main():
         yaml_lines.append(f'    label: "{e["label"]}"')
         yaml_lines.append(f'    tips: "{tips_escaped}"')
         yaml_lines.append(f'    best_input: "{best_input_escaped}"')
-        yaml_lines.append(f"    category: {e['category']}")
+        if e['category']:
+            yaml_lines.append(f"    category: {e['category']}")
+        else:
+            yaml_lines.append(f"    category:")
         yaml_lines.append("")
 
     # Insert effects before the TEMPLATES comment
@@ -303,7 +394,10 @@ def main():
         f.write(content)
 
     print(f"\n  Updated: effects.yaml (+{len(effects_to_add)} effects)")
-    print(f"\n  Done! {len(effects_to_add)} effects registered under category '{category}'")
+    if no_category:
+        print(f"\n  Done! {len(effects_to_add)} effects registered (top-level, no category)")
+    else:
+        print(f"\n  Done! {len(effects_to_add)} effects registered under category '{category}'")
 
 
 if __name__ == "__main__":
