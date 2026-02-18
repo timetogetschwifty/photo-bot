@@ -568,9 +568,12 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     ])
 
     tips = (effect.get('tips') or '').strip()
+    best_input = (effect.get('best_input') or '').strip()
     parts = []
     if tips:
         parts.append(tips)
+    if best_input:
+        parts.append(f"📷 Лучше всего подойдёт: {best_input}")
     parts.append("Отправь мне фото для обработки 👇")
     message = "\n\n".join(parts)
 
