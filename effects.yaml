@@ -515,7 +515,7 @@ effects:
   Custom0218_01_LubokFairPoster:
     enabled: true
     order: 15
-    label: "Lubok Fair Poster"
+    label: "Масленица афиша"
     tips: "Превращает селфи в яркую масленичную лубочную афишу с орнаментальной рамкой, самоваром и блинами, оставляя лицо узнаваемым."
     best_input: "Чёткое селфи по пояс или по плечи, лицо крупно и хорошо освещено.; Нейтральный фон или улица; одно лицо в кадре — идеально.; Фото без сильных фильтров, без \"рыбьего глаза\", без сильного размытия."
     category:
@@ -523,7 +523,7 @@ effects:
   Custom0218_02_LubokPancakePrint:
     enabled: true
     order: 16
-    label: "Lubok Pancake Print"
+    label: "Масленница открытка"
     tips: "Сделайте лубочную народную открытку: плоские цвета, толстый контур, орнаменты и панель с подписью."
     best_input: ""
     category:
@@ -531,7 +531,7 @@ effects:
   Custom0218_03_ActionFigureBlister:
     enabled: true
     order: 17
-    label: "Action Figure Blister"
+    label: "Экшн-фигурка в упаковке"
     tips: "Вы в блистерной упаковке как экшен-фигурка: \"starter pack\" и аксессуары (кружка, ноутбук, наушники и т.д.)."
     best_input: ""
     category:
