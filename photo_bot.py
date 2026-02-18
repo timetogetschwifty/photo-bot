@@ -19,6 +19,7 @@ from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    InputMediaPhoto,
     ReplyKeyboardMarkup,
     LabeledPrice,
 )
@@ -212,6 +213,66 @@ def back_to_browse_keyboard() -> InlineKeyboardMarkup:
     ])
 
 
+async def edit_message(query, text: str, reply_markup, parse_mode=None):
+    """Edit message in place, preserving photo if present (for photo-bearing screens like main menu)."""
+    try:
+        if query.message.photo:
+            await query.edit_message_caption(caption=text, reply_markup=reply_markup, parse_mode=parse_mode)
+        else:
+            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=parse_mode)
+    except Exception as e:
+        if "message is not modified" not in str(e).lower():
+            raise
+
+
+async def edit_text_screen(query, context, chat_id: int, text: str, reply_markup, parse_mode=None):
+    """For text-only screens: removes stale photo if present, then edits or sends text."""
+    try:
+        if query.message.photo:
+            await query.message.delete()
+            await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup, parse_mode=parse_mode)
+        else:
+            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=parse_mode)
+    except Exception as e:
+        if "message is not modified" not in str(e).lower():
+            raise
+
+
+async def edit_main_menu_screen(query, context, chat_id: int, text: str, reply_markup):
+    """Show main menu with correct logo regardless of the current message type.
+
+    photo + logo     → edit_message_media to logo (no jump, correct image)
+    photo + no logo  → edit_message_caption (no jump)
+    text  + logo     → delete + send_photo (one unavoidable jump)
+    text  + no logo  → edit_message_text (no jump)
+    """
+    try:
+        if LOGO_PATH:
+            if query.message.photo:
+                with open(LOGO_PATH, "rb") as img:
+                    await query.edit_message_media(
+                        media=InputMediaPhoto(media=img, caption=text),
+                        reply_markup=reply_markup,
+                    )
+            else:
+                await query.message.delete()
+                with open(LOGO_PATH, "rb") as img:
+                    await context.bot.send_photo(
+                        chat_id=chat_id,
+                        photo=img,
+                        caption=text,
+                        reply_markup=reply_markup,
+                    )
+        else:
+            if query.message.photo:
+                await query.edit_message_caption(caption=text, reply_markup=reply_markup)
+            else:
+                await query.edit_message_text(text, reply_markup=reply_markup)
+    except Exception as e:
+        if "message is not modified" not in str(e).lower():
+            raise
+
+
 # ── Main Menu ────────────────────────────────────────────────────────────────
 
 
@@ -285,12 +346,7 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
 
-    # Delete old message and send fresh main menu with logo
-    if query.message.photo:
-        await query.message.delete()
-    else:
-        await query.delete_message()
-    await send_main_menu(context.bot, user.id, text, reply_keyboard())
+    await edit_main_menu_screen(query, context, update.effective_chat.id, text, main_menu_keyboard())
     return MAIN_MENU
 
 
@@ -309,14 +365,12 @@ async def restart_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
     text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
 
-    # Delete old message and send fresh main menu with logo
-    await query.message.delete()
-    await send_main_menu(context.bot, user.id, text, reply_keyboard())
+    await edit_main_menu_screen(query, context, update.effective_chat.id, text, main_menu_keyboard())
     return MAIN_MENU
 
 
 async def back_to_browse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Return to previous browse category without deleting media messages."""
+    """Return to previous browse category, editing the result photo in place."""
     query = update.callback_query
     await query.answer()
 
@@ -328,11 +382,35 @@ async def back_to_browse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     context.user_data["current_category"] = category_id
 
     title, keyboard = build_browse_keyboard(category_id, credits)
-    await context.bot.send_message(
-        chat_id=user.id,
-        text=title,
-        reply_markup=keyboard,
-    )
+
+    # Prefer category image, fall back to logo — keeps a photo message alive
+    # so subsequent category/effect taps can use edit_message_media (no jump).
+    cat_image = CATEGORIES.get(category_id or "", {}).get("image") if category_id else None
+    image_path = (cat_image if cat_image and os.path.exists(cat_image) else None) or LOGO_PATH
+
+    if image_path:
+        try:
+            with open(image_path, "rb") as img:
+                await query.edit_message_media(
+                    media=InputMediaPhoto(media=img, caption=title),
+                    reply_markup=keyboard,
+                )
+        except Exception as e:
+            if "message is not modified" not in str(e).lower():
+                # Fallback: delete result photo + resend
+                try:
+                    await query.message.delete()
+                except Exception:
+                    pass
+                with open(image_path, "rb") as img:
+                    await context.bot.send_photo(
+                        chat_id=user.id,
+                        photo=img,
+                        caption=title,
+                        reply_markup=keyboard,
+                    )
+    else:
+        await edit_text_screen(query, context, user.id, title, keyboard)
     return BROWSING
 
 
@@ -434,16 +512,7 @@ async def show_browse_root(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     title, keyboard = build_browse_keyboard(None, credits)
 
-    # Check if message has photo (can't edit photo messages to text)
-    if query.message.photo:
-        await query.message.delete()
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=title,
-            reply_markup=keyboard,
-        )
-    else:
-        await query.edit_message_text(title, reply_markup=keyboard)
+    await edit_main_menu_screen(query, context, update.effective_chat.id, title, keyboard)
     return BROWSING
 
 
@@ -459,20 +528,11 @@ async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     # Validate category exists
     if category_id and category_id not in CATEGORIES:
-        # Check if message has photo (can't edit photo messages to text)
         error_text = "❌ Категория не найдена\n\nНажми кнопку ниже, чтобы начать заново:"
         error_keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("🔄 Начать заново", callback_data="restart")],
         ])
-        if query.message.photo:
-            await query.message.delete()
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=error_text,
-                reply_markup=error_keyboard,
-            )
-        else:
-            await query.edit_message_text(error_text, reply_markup=error_keyboard)
+        await edit_text_screen(query, context, update.effective_chat.id, error_text, error_keyboard)
         return MAIN_MENU
 
     # Track current browsing category
@@ -483,28 +543,37 @@ async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     cat_image = CATEGORIES.get(category_id, {}).get("image")
 
     if cat_image and os.path.exists(cat_image):
-        # Send category with image
         if query.message.photo:
-            await query.message.delete()
+            try:
+                with open(cat_image, "rb") as img:
+                    await query.edit_message_media(
+                        media=InputMediaPhoto(media=img, caption=title),
+                        reply_markup=keyboard,
+                    )
+            except Exception as e:
+                if "message is not modified" not in str(e).lower():
+                    # Fallback: delete stale photo + resend
+                    try:
+                        await query.message.delete()
+                    except Exception:
+                        pass
+                    with open(cat_image, "rb") as img:
+                        await context.bot.send_photo(
+                            chat_id=update.effective_chat.id,
+                            photo=img,
+                            caption=title,
+                            reply_markup=keyboard,
+                        )
         else:
-            await query.delete_message()
-        with open(cat_image, "rb") as img:
-            await context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                photo=img,
-                caption=title,
-                reply_markup=keyboard,
-            )
-    elif query.message.photo:
-        # Previous message had photo, can't edit to text — delete and resend
-        await query.message.delete()
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=title,
-            reply_markup=keyboard,
-        )
+            with open(cat_image, "rb") as img:
+                await context.bot.send_photo(
+                    chat_id=update.effective_chat.id,
+                    photo=img,
+                    caption=title,
+                    reply_markup=keyboard,
+                )
     else:
-        await query.edit_message_text(title, reply_markup=keyboard)
+        await edit_text_screen(query, context, update.effective_chat.id, title, keyboard)
     return BROWSING
 
 
@@ -546,11 +615,7 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
         ])
 
-        await query.edit_message_text(
-            message,
-            reply_markup=keyboard,
-            parse_mode="HTML",
-        )
+        await edit_text_screen(query, context, update.effective_chat.id, message, keyboard, parse_mode="HTML")
 
         return BROWSING
 
@@ -579,16 +644,37 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     example_image = effect.get("example_image")
     if example_image and os.path.exists(example_image):
-        await query.delete_message()
-        with open(example_image, "rb") as img:
-            await context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                photo=img,
-                caption=message,
-                reply_markup=keyboard,
-            )
+        if query.message.photo:
+            try:
+                with open(example_image, "rb") as img:
+                    await query.edit_message_media(
+                        media=InputMediaPhoto(media=img, caption=message),
+                        reply_markup=keyboard,
+                    )
+            except Exception as e:
+                if "message is not modified" not in str(e).lower():
+                    # Fallback: delete stale photo + resend
+                    try:
+                        await query.message.delete()
+                    except Exception:
+                        pass
+                    with open(example_image, "rb") as img:
+                        await context.bot.send_photo(
+                            chat_id=update.effective_chat.id,
+                            photo=img,
+                            caption=message,
+                            reply_markup=keyboard,
+                        )
+        else:
+            with open(example_image, "rb") as img:
+                await context.bot.send_photo(
+                    chat_id=update.effective_chat.id,
+                    photo=img,
+                    caption=message,
+                    reply_markup=keyboard,
+                )
     else:
-        await query.edit_message_text(message, reply_markup=keyboard)
+        await edit_text_screen(query, context, update.effective_chat.id, message, keyboard)
     return WAITING_PHOTO
 
 
@@ -769,16 +855,7 @@ async def show_store(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     text = "Выбери пакет:"
     keyboard = InlineKeyboardMarkup(buttons)
 
-    # Check if message has photo (can't edit photo messages to text)
-    if query.message.photo:
-        await query.message.delete()
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text,
-            reply_markup=keyboard,
-        )
-    else:
-        await query.edit_message_text(text, reply_markup=keyboard)
+    await edit_text_screen(query, context, update.effective_chat.id, text, keyboard)
     return STORE
 
 
@@ -948,16 +1025,7 @@ async def show_promo_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
     ])
 
-    # Check if message has photo (can't edit photo messages to text)
-    if query.message.photo:
-        await query.message.delete()
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text,
-            reply_markup=keyboard,
-        )
-    else:
-        await query.edit_message_text(text, reply_markup=keyboard)
+    await edit_text_screen(query, context, update.effective_chat.id, text, keyboard)
     return PROMO_INPUT
 
 
@@ -1003,16 +1071,7 @@ async def show_referral(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
     ])
 
-    # Check if message has photo (can't edit photo messages to text)
-    if query.message.photo:
-        await query.message.delete()
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text,
-            reply_markup=keyboard,
-        )
-    else:
-        await query.edit_message_text(text, reply_markup=keyboard)
+    await edit_text_screen(query, context, update.effective_chat.id, text, keyboard)
     return REFERRAL
 
 
@@ -1041,16 +1100,7 @@ async def show_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     keyboard = InlineKeyboardMarkup(buttons)
 
-    # Check if message has photo (can't edit photo messages to text)
-    if query.message.photo:
-        await query.message.delete()
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text,
-            reply_markup=keyboard,
-        )
-    else:
-        await query.edit_message_text(text, reply_markup=keyboard)
+    await edit_text_screen(query, context, update.effective_chat.id, text, keyboard)
     return ABOUT
 
 
