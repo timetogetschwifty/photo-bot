@@ -937,7 +937,7 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
         # Send invoice with fiscal data
         # Email will be collected on payment form (required for receipt delivery)
-        await context.bot.send_invoice(
+        invoice_msg = await context.bot.send_invoice(
             chat_id=update.effective_chat.id,
             title=f"Пакет {package['credits']} зарядов",
             description=f"Пополнение баланса на {package['credits']} зарядов",
@@ -949,15 +949,17 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
             need_email=True,
             send_email_to_provider=True,
         )
+        context.user_data["pending_invoice_message_id"] = invoice_msg.message_id
 
         # Send cancel button separately (invoices can't have inline buttons)
-        await context.bot.send_message(
+        cancel_msg = await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Нажми кнопку ниже, чтобы отменить покупку:",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("⬅️ Назад", callback_data="cancel_payment")]
             ]),
         )
+        context.user_data["pending_cancel_message_id"] = cancel_msg.message_id
         return WAITING_PAYMENT
     except Exception as e:
         logger.error(f"Payment error: {e}")
@@ -976,7 +978,26 @@ async def cancel_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     query = update.callback_query
     await query.answer()
     context.user_data.pop("pending_package", None)
-    await query.edit_message_text("Покупка отменена.")
+
+    # Remove cancel prompt message
+    try:
+        await query.message.delete()
+    except Exception:
+        pass
+
+    # Remove invoice message so chat doesn't keep stale payment UI
+    invoice_message_id = context.user_data.pop("pending_invoice_message_id", None)
+    if invoice_message_id:
+        try:
+            await context.bot.delete_message(
+                chat_id=update.effective_chat.id,
+                message_id=invoice_message_id,
+            )
+        except Exception:
+            pass
+
+    context.user_data.pop("pending_cancel_message_id", None)
+
     buttons = [
         [InlineKeyboardButton(pkg["label"], callback_data=f"buy_{key}")]
         for key, pkg in PACKAGES.items()
