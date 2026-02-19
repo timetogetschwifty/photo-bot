@@ -335,7 +335,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Show main menu (from callback)."""
+    """Show main menu (from callback) using reply keyboard mode."""
     query = update.callback_query
     await query.answer()
 
@@ -346,12 +346,21 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
 
-    await edit_main_menu_screen(query, context, update.effective_chat.id, text, main_menu_keyboard())
+    # Keep generated result photos, but remove other callback-origin messages
+    # so main menu stays visually consistent as a fresh reply-keyboard screen.
+    is_result_photo = bool(query.message.caption and query.message.caption.startswith("✅"))
+    if not is_result_photo:
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
+
+    await send_main_menu(context.bot, update.effective_chat.id, text, reply_keyboard())
     return MAIN_MENU
 
 
 async def restart_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle restart button (callback version of /start)."""
+    """Handle restart button (callback version of /start) in reply keyboard mode."""
     query = update.callback_query
     await query.answer()
 
@@ -365,7 +374,14 @@ async def restart_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
     text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
 
-    await edit_main_menu_screen(query, context, update.effective_chat.id, text, main_menu_keyboard())
+    is_result_photo = bool(query.message.caption and query.message.caption.startswith("✅"))
+    if not is_result_photo:
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
+
+    await send_main_menu(context.bot, update.effective_chat.id, text, reply_keyboard())
     return MAIN_MENU
 
 
@@ -598,6 +614,11 @@ async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                             reply_markup=keyboard,
                         )
         else:
+            # Text message — delete it before sending photo so it doesn't linger above
+            try:
+                await query.message.delete()
+            except Exception:
+                pass
             with open(cat_image, "rb") as img:
                 await context.bot.send_photo(
                     chat_id=update.effective_chat.id,
@@ -699,6 +720,11 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                             reply_markup=keyboard,
                         )
         else:
+            # Text message — delete it before sending photo so it doesn't linger above
+            try:
+                await query.message.delete()
+            except Exception:
+                pass
             with open(example_image, "rb") as img:
                 await context.bot.send_photo(
                     chat_id=update.effective_chat.id,
