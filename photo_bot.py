@@ -388,27 +388,60 @@ async def back_to_browse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     cat_image = CATEGORIES.get(category_id or "", {}).get("image") if category_id else None
     image_path = (cat_image if cat_image and os.path.exists(cat_image) else None) or LOGO_PATH
 
-    if image_path:
-        try:
+    # Never edit or delete a generated result photo (caption always starts with ✅).
+    is_result_photo = bool(query.message.caption and query.message.caption.startswith("✅"))
+
+    if is_result_photo:
+        # Result photo must stay — send browse screen as a new message below it.
+        if image_path:
             with open(image_path, "rb") as img:
-                await query.edit_message_media(
-                    media=InputMediaPhoto(media=img, caption=title),
+                await context.bot.send_photo(
+                    chat_id=user.id,
+                    photo=img,
+                    caption=title,
                     reply_markup=keyboard,
                 )
-        except Exception as e:
-            if "message is not modified" not in str(e).lower():
-                # Fallback: delete result photo + resend
-                try:
-                    await query.message.delete()
-                except Exception:
-                    pass
+        else:
+            await context.bot.send_message(
+                chat_id=user.id,
+                text=title,
+                reply_markup=keyboard,
+            )
+    elif image_path:
+        if query.message.photo:
+            try:
                 with open(image_path, "rb") as img:
-                    await context.bot.send_photo(
-                        chat_id=user.id,
-                        photo=img,
-                        caption=title,
+                    await query.edit_message_media(
+                        media=InputMediaPhoto(media=img, caption=title),
                         reply_markup=keyboard,
                     )
+            except Exception as e:
+                if "message is not modified" not in str(e).lower():
+                    # Fallback: delete nav message + resend as photo
+                    try:
+                        await query.message.delete()
+                    except Exception:
+                        pass
+                    with open(image_path, "rb") as img:
+                        await context.bot.send_photo(
+                            chat_id=user.id,
+                            photo=img,
+                            caption=title,
+                            reply_markup=keyboard,
+                        )
+        else:
+            # Text message (e.g. nav message after result photo) — delete and send photo
+            try:
+                await query.message.delete()
+            except Exception:
+                pass
+            with open(image_path, "rb") as img:
+                await context.bot.send_photo(
+                    chat_id=user.id,
+                    photo=img,
+                    caption=title,
+                    reply_markup=keyboard,
+                )
     else:
         await edit_text_screen(query, context, user.id, title, keyboard)
     return BROWSING
@@ -931,18 +964,30 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=f"❌ Ошибка платежа: {e}\n\nПопробуйте позже.",
-            reply_markup=back_to_main_keyboard(),
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ К выбору пакетов", callback_data="menu_store")],
+            ]),
         )
-        return MAIN_MENU
+        return STORE
 
 
 async def cancel_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Cancel payment and return to main menu."""
+    """Cancel payment and return to store."""
     query = update.callback_query
     await query.answer()
     context.user_data.pop("pending_package", None)
     await query.edit_message_text("Покупка отменена.")
-    return await show_main_menu_fresh(update, context)
+    buttons = [
+        [InlineKeyboardButton(pkg["label"], callback_data=f"buy_{key}")]
+        for key, pkg in PACKAGES.items()
+    ]
+    buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")])
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Выбери пакет:",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+    return STORE
 
 
 async def show_main_menu_fresh(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -974,11 +1019,13 @@ async def recover_stale_callback(update: Update, context: ContextTypes.DEFAULT_T
     name = user.first_name or "друг"
     text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
 
-    # Old inline messages may be photo/text; deleting is the safest cross-type behavior.
-    try:
-        await query.message.delete()
-    except Exception:
-        pass
+    # Never delete a generated result photo (caption always starts with ✅).
+    is_result_photo = bool(query.message.caption and query.message.caption.startswith("✅"))
+    if not is_result_photo:
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
 
     await send_main_menu(context.bot, user.id, text, reply_keyboard())
 
@@ -1328,12 +1375,14 @@ def main() -> None:
             ],
             STORE: [
                 CallbackQueryHandler(restart_bot, pattern="^restart$"),
+                CallbackQueryHandler(show_store, pattern="^menu_store$"),
                 CallbackQueryHandler(buy_package, pattern="^buy_"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ] + reply_kb,
             WAITING_PAYMENT: [
                 MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment),
                 CallbackQueryHandler(restart_bot, pattern="^restart$"),
+                CallbackQueryHandler(show_store, pattern="^menu_store$"),
                 CallbackQueryHandler(cancel_payment, pattern="^cancel_payment$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ] + reply_kb,
