@@ -796,6 +796,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         await update.message.reply_photo(
             photo=output_buffer,
             caption=f"✅ {effect['label']}\n⚡ Осталось зарядов: {remaining}",
+        )
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Выбери следующий эффект:",
             reply_markup=back_to_browse_keyboard(),
         )
 

@@ -29,7 +29,7 @@ GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 GEMINI_MODEL = "gemini-3-pro-image-preview"
 
 # ── Change this to switch test photo ──────────────────────────────────────────
-TEST_PHOTO = "40.jpg"
+TEST_PHOTO = "23.jpg"
 # ──────────────────────────────────────────────────────────────────────────────
 
 PROMPT_FILE = os.path.join(TESTING_DIR, "prompt.txt")
