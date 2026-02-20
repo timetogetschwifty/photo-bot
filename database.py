@@ -7,7 +7,7 @@ import os
 import sqlite3
 import secrets
 import string
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -325,7 +325,10 @@ def redeem_promo_code(telegram_id: int, code: str) -> tuple[bool, str, int]:
     # Check expiry
     if promo["expires_at"] is not None:
         expires_at = datetime.fromisoformat(promo["expires_at"])
-        if datetime.utcnow() > expires_at:
+        # Handle both naive and timezone-aware stored timestamps safely.
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > expires_at:
             conn.close()
             return False, "Срок действия промокода истёк", 0
 
