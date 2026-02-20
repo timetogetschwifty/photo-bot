@@ -227,17 +227,53 @@ async def edit_message(query, text: str, reply_markup, parse_mode=None):
             raise
 
 
+def _is_result_photo_message(message) -> bool:
+    """Return True when message looks like generated result photo."""
+    caption = getattr(message, "caption", None)
+    return bool(caption and str(caption).startswith("✅"))
+
+
 async def edit_text_screen(query, context, chat_id: int, text: str, reply_markup, parse_mode=None):
     """For text-only screens: removes stale photo if present, then edits or sends text."""
+    message = getattr(query, "message", None)
+    has_photo = bool(getattr(message, "photo", None))
+
+    # If callback came from a photo message, replace it with a text message.
+    if has_photo and message:
+        try:
+            await message.delete()
+        except Exception:
+            pass
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+        )
+        return
+
     try:
-        if query.message.photo:
-            await query.message.delete()
-            await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup, parse_mode=parse_mode)
-        else:
-            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=parse_mode)
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=parse_mode)
     except Exception as e:
-        if "message is not modified" not in str(e).lower():
-            raise
+        lower = str(e).lower()
+        if "message is not modified" in lower:
+            return
+        # Old/stale callbacks may point to messages that can't be edited anymore.
+        if (
+            "message to edit not found" in lower
+            or "message can't be edited" in lower
+            or "there is no text in the message" in lower
+            or "inaccessible" in lower
+            or "attribute" in lower
+        ):
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                reply_markup=reply_markup,
+                parse_mode=parse_mode,
+            )
+            return
+        raise
 
 
 async def edit_main_menu_screen(query, context, chat_id: int, text: str, reply_markup):
@@ -440,7 +476,7 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # Keep generated result photos, but remove other callback-origin messages
     # so main menu stays visually consistent as a fresh reply-keyboard screen.
-    is_result_photo = bool(query.message.caption and query.message.caption.startswith("✅"))
+    is_result_photo = _is_result_photo_message(getattr(query, "message", None))
     if not is_result_photo:
         try:
             await query.message.delete()
@@ -466,7 +502,7 @@ async def restart_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
     text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
 
-    is_result_photo = bool(query.message.caption and query.message.caption.startswith("✅"))
+    is_result_photo = _is_result_photo_message(getattr(query, "message", None))
     if not is_result_photo:
         try:
             await query.message.delete()
@@ -592,9 +628,10 @@ async def show_browse_root(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     credits = db_user["credits"] if db_user else 0
 
     context.user_data['current_category'] = None
-    # Adopt the current message as the Create anchor
-    context.user_data["create_ui_message_id"] = query.message.message_id
-    context.user_data["create_ui_is_photo"] = bool(query.message.photo)
+    # Adopt the current callback message as Create anchor when available.
+    if getattr(query, "message", None):
+        context.user_data["create_ui_message_id"] = query.message.message_id
+        context.user_data["create_ui_is_photo"] = bool(getattr(query.message, "photo", None))
 
     title, keyboard = build_browse_keyboard(None, credits)
     await render_create_screen(context, update.effective_chat.id, title, keyboard, LOGO_PATH)
@@ -1036,7 +1073,7 @@ async def recover_stale_callback(update: Update, context: ContextTypes.DEFAULT_T
     text = f"Привет, {name}!\n⚡ Доступно зарядов: {credits}\nВыбери действие 👇"
 
     # Never delete a generated result photo (caption always starts with ✅).
-    is_result_photo = bool(query.message.caption and query.message.caption.startswith("✅"))
+    is_result_photo = _is_result_photo_message(getattr(query, "message", None))
     if not is_result_photo:
         try:
             await query.message.delete()
