@@ -10,6 +10,7 @@ import io
 import json
 import logging
 import yaml
+from datetime import datetime, timedelta, timezone
 
 from dotenv import load_dotenv
 from PIL import Image
@@ -167,7 +168,8 @@ PROMO_AMOUNTS = [10, 25, 50, 100]
     ADMIN_MENU,
     ADMIN_STATS,
     ADMIN_PROMO,
-) = range(11)
+    ADMIN_BULK_PROMO,
+) = range(12)
 
 # ── Gemini client ────────────────────────────────────────────────────────────
 
@@ -271,6 +273,96 @@ async def edit_main_menu_screen(query, context, chat_id: int, text: str, reply_m
     except Exception as e:
         if "message is not modified" not in str(e).lower():
             raise
+
+
+async def render_create_screen(
+    context,
+    chat_id: int,
+    text: str,
+    reply_markup,
+    image_path: str | None = None,
+    parse_mode: str | None = None,
+) -> None:
+    """Edit the single Create-flow anchor message in place.
+
+    Reads/writes context.user_data keys:
+        create_ui_message_id  — message ID of the anchor
+        create_ui_is_photo    — True if the anchor is currently a photo message
+
+    If no anchor is set, sends a new message and saves its ID.
+    On any error (message gone, etc.) recreates the anchor fresh.
+    """
+    async def _send_new() -> None:
+        if image_path and os.path.exists(image_path):
+            with open(image_path, "rb") as img:
+                msg = await context.bot.send_photo(
+                    chat_id=chat_id,
+                    photo=img,
+                    caption=text,
+                    reply_markup=reply_markup,
+                    parse_mode=parse_mode,
+                )
+            context.user_data["create_ui_message_id"] = msg.message_id
+            context.user_data["create_ui_is_photo"] = True
+        else:
+            msg = await context.bot.send_message(
+                chat_id=chat_id,
+                text=text or "\u200b",
+                reply_markup=reply_markup,
+                parse_mode=parse_mode,
+            )
+            context.user_data["create_ui_message_id"] = msg.message_id
+            context.user_data["create_ui_is_photo"] = False
+
+    message_id = context.user_data.get("create_ui_message_id")
+    is_photo = context.user_data.get("create_ui_is_photo", False)
+
+    if not message_id:
+        await _send_new()
+        return
+
+    try:
+        if image_path and os.path.exists(image_path):
+            if is_photo:
+                with open(image_path, "rb") as img:
+                    await context.bot.edit_message_media(
+                        chat_id=chat_id,
+                        message_id=message_id,
+                        media=InputMediaPhoto(media=img, caption=text, parse_mode=parse_mode),
+                        reply_markup=reply_markup,
+                    )
+            else:
+                # Text anchor → delete and resend as photo
+                try:
+                    await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
+                except Exception:
+                    pass
+                context.user_data.pop("create_ui_message_id", None)
+                await _send_new()
+        else:
+            if is_photo:
+                await context.bot.edit_message_caption(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    caption=text,
+                    reply_markup=reply_markup,
+                    parse_mode=parse_mode,
+                )
+            else:
+                await context.bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    text=text or "\u200b",
+                    reply_markup=reply_markup,
+                    parse_mode=parse_mode,
+                )
+    except Exception as e:
+        if "message is not modified" in str(e).lower():
+            return
+        # Anchor lost — recreate
+        context.user_data.pop("create_ui_message_id", None)
+        context.user_data.pop("create_ui_is_photo", None)
+        await _send_new()
 
 
 # ── Main Menu ────────────────────────────────────────────────────────────────
@@ -386,7 +478,7 @@ async def restart_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 
 async def back_to_browse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Return to previous browse category, editing the result photo in place."""
+    """Return to previous browse category."""
     query = update.callback_query
     await query.answer()
 
@@ -399,67 +491,10 @@ async def back_to_browse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     title, keyboard = build_browse_keyboard(category_id, credits)
 
-    # Prefer category image, fall back to logo — keeps a photo message alive
-    # so subsequent category/effect taps can use edit_message_media (no jump).
     cat_image = CATEGORIES.get(category_id or "", {}).get("image") if category_id else None
     image_path = (cat_image if cat_image and os.path.exists(cat_image) else None) or LOGO_PATH
 
-    # Never edit or delete a generated result photo (caption always starts with ✅).
-    is_result_photo = bool(query.message.caption and query.message.caption.startswith("✅"))
-
-    if is_result_photo:
-        # Result photo must stay — send browse screen as a new message below it.
-        if image_path:
-            with open(image_path, "rb") as img:
-                await context.bot.send_photo(
-                    chat_id=user.id,
-                    photo=img,
-                    caption=title,
-                    reply_markup=keyboard,
-                )
-        else:
-            await context.bot.send_message(
-                chat_id=user.id,
-                text=title,
-                reply_markup=keyboard,
-            )
-    elif image_path:
-        if query.message.photo:
-            try:
-                with open(image_path, "rb") as img:
-                    await query.edit_message_media(
-                        media=InputMediaPhoto(media=img, caption=title),
-                        reply_markup=keyboard,
-                    )
-            except Exception as e:
-                if "message is not modified" not in str(e).lower():
-                    # Fallback: delete nav message + resend as photo
-                    try:
-                        await query.message.delete()
-                    except Exception:
-                        pass
-                    with open(image_path, "rb") as img:
-                        await context.bot.send_photo(
-                            chat_id=user.id,
-                            photo=img,
-                            caption=title,
-                            reply_markup=keyboard,
-                        )
-        else:
-            # Text message (e.g. nav message after result photo) — delete and send photo
-            try:
-                await query.message.delete()
-            except Exception:
-                pass
-            with open(image_path, "rb") as img:
-                await context.bot.send_photo(
-                    chat_id=user.id,
-                    photo=img,
-                    caption=title,
-                    reply_markup=keyboard,
-                )
-    else:
-        await edit_text_screen(query, context, user.id, title, keyboard)
+    await render_create_screen(context, user.id, title, keyboard, image_path)
     return BROWSING
 
 
@@ -485,14 +520,12 @@ def build_browse_keyboard(category_id: str | None, credits: int) -> tuple[str, I
     # Back button
     if category_id is None:
         buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")])
-        title = f"⚡ Доступно зарядов: {credits}\nВыбери категорию:"
     else:
         parent = CATEGORIES.get(category_id, {}).get("parent")
         back_data = f"cat_{parent}" if parent else "browse_root"
         buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data=back_data)])
-        category_label = CATEGORIES.get(category_id, {}).get("label", "Выбери:")
-        title = f"⚡ Доступно зарядов: {credits}\n{category_label}"
 
+    title = f"⚡ Доступно зарядов: {credits}" if category_id is None else ""
     return title, InlineKeyboardMarkup(buttons)
 
 
@@ -502,11 +535,13 @@ async def handle_reply_create(update: Update, context: ContextTypes.DEFAULT_TYPE
     db_user = db.get_user(user.id)
     credits = db_user["credits"] if db_user else 0
 
-    # Track current browsing category (None = top level)
     context.user_data['current_category'] = None
+    # Clear stale anchor so render_create_screen sends a fresh message
+    context.user_data.pop("create_ui_message_id", None)
+    context.user_data.pop("create_ui_is_photo", None)
 
     title, keyboard = build_browse_keyboard(None, credits)
-    await update.message.reply_text(title, reply_markup=keyboard)
+    await render_create_screen(context, update.effective_chat.id, title, keyboard, LOGO_PATH)
     return BROWSING
 
 
@@ -556,12 +591,13 @@ async def show_browse_root(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     db_user = db.get_user(user.id)
     credits = db_user["credits"] if db_user else 0
 
-    # Track current browsing category (None = top level)
     context.user_data['current_category'] = None
+    # Adopt the current message as the Create anchor
+    context.user_data["create_ui_message_id"] = query.message.message_id
+    context.user_data["create_ui_is_photo"] = bool(query.message.photo)
 
     title, keyboard = build_browse_keyboard(None, credits)
-
-    await edit_main_menu_screen(query, context, update.effective_chat.id, title, keyboard)
+    await render_create_screen(context, update.effective_chat.id, title, keyboard, LOGO_PATH)
     return BROWSING
 
 
@@ -584,50 +620,14 @@ async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await edit_text_screen(query, context, update.effective_chat.id, error_text, error_keyboard)
         return MAIN_MENU
 
-    # Track current browsing category
     context.user_data['current_category'] = category_id
 
     title, keyboard = build_browse_keyboard(category_id, credits)
 
     cat_image = CATEGORIES.get(category_id, {}).get("image")
+    image_path = cat_image if cat_image and os.path.exists(cat_image) else None
 
-    if cat_image and os.path.exists(cat_image):
-        if query.message.photo:
-            try:
-                with open(cat_image, "rb") as img:
-                    await query.edit_message_media(
-                        media=InputMediaPhoto(media=img, caption=title),
-                        reply_markup=keyboard,
-                    )
-            except Exception as e:
-                if "message is not modified" not in str(e).lower():
-                    # Fallback: delete stale photo + resend
-                    try:
-                        await query.message.delete()
-                    except Exception:
-                        pass
-                    with open(cat_image, "rb") as img:
-                        await context.bot.send_photo(
-                            chat_id=update.effective_chat.id,
-                            photo=img,
-                            caption=title,
-                            reply_markup=keyboard,
-                        )
-        else:
-            # Text message — delete it before sending photo so it doesn't linger above
-            try:
-                await query.message.delete()
-            except Exception:
-                pass
-            with open(cat_image, "rb") as img:
-                await context.bot.send_photo(
-                    chat_id=update.effective_chat.id,
-                    photo=img,
-                    caption=title,
-                    reply_markup=keyboard,
-                )
-    else:
-        await edit_text_screen(query, context, update.effective_chat.id, title, keyboard)
+    await render_create_screen(context, update.effective_chat.id, title, keyboard, image_path)
     return BROWSING
 
 
@@ -669,8 +669,9 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
         ])
 
-        await edit_text_screen(query, context, update.effective_chat.id, message, keyboard, parse_mode="HTML")
-
+        await render_create_screen(
+            context, update.effective_chat.id, message, keyboard, parse_mode="HTML"
+        )
         return BROWSING
 
     # Store selected effect and remember which category we came from
@@ -697,43 +698,8 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     message = "\n\n".join(parts)
 
     example_image = effect.get("example_image")
-    if example_image and os.path.exists(example_image):
-        if query.message.photo:
-            try:
-                with open(example_image, "rb") as img:
-                    await query.edit_message_media(
-                        media=InputMediaPhoto(media=img, caption=message),
-                        reply_markup=keyboard,
-                    )
-            except Exception as e:
-                if "message is not modified" not in str(e).lower():
-                    # Fallback: delete stale photo + resend
-                    try:
-                        await query.message.delete()
-                    except Exception:
-                        pass
-                    with open(example_image, "rb") as img:
-                        await context.bot.send_photo(
-                            chat_id=update.effective_chat.id,
-                            photo=img,
-                            caption=message,
-                            reply_markup=keyboard,
-                        )
-        else:
-            # Text message — delete it before sending photo so it doesn't linger above
-            try:
-                await query.message.delete()
-            except Exception:
-                pass
-            with open(example_image, "rb") as img:
-                await context.bot.send_photo(
-                    chat_id=update.effective_chat.id,
-                    photo=img,
-                    caption=message,
-                    reply_markup=keyboard,
-                )
-    else:
-        await edit_text_screen(query, context, update.effective_chat.id, message, keyboard)
+    image_path = example_image if example_image and os.path.exists(example_image) else None
+    await render_create_screen(context, update.effective_chat.id, message, keyboard, image_path)
     return WAITING_PHOTO
 
 
@@ -856,11 +822,14 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             photo=output_buffer,
             caption=f"✅ {effect['label']}\n⚡ Осталось зарядов: {remaining}",
         )
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Выбери следующий эффект:",
-            reply_markup=back_to_browse_keyboard(),
-        )
+
+        # Update anchor to browse screen (no separate nav message)
+        previous_category = context.user_data.get("previous_category")
+        context.user_data["current_category"] = previous_category
+        title, keyboard = build_browse_keyboard(previous_category, remaining)
+        cat_image = CATEGORIES.get(previous_category or "", {}).get("image") if previous_category else None
+        nav_image = (cat_image if cat_image and os.path.exists(cat_image) else None) or LOGO_PATH
+        await render_create_screen(context, update.effective_chat.id, title, keyboard, nav_image)
 
     except Exception as e:
         logger.error("Error during transformation: %s", e, exc_info=True)
@@ -883,7 +852,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     finally:
         context.user_data.pop("effect_id", None)
 
-    return MAIN_MENU
+    return BROWSING
 
 
 async def photo_expected(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -1243,7 +1212,8 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         "🔐 Админ-панель",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
-            [InlineKeyboardButton("🎁 Создать промокод", callback_data="admin_promo")],
+            [InlineKeyboardButton("🎁 Подарочный промокод", callback_data="admin_promo")],
+            [InlineKeyboardButton("🎟 Массовый промокод", callback_data="admin_bulk_promo")],
             [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
         ]),
     )
@@ -1333,6 +1303,99 @@ async def create_promo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     return ADMIN_MENU
 
 
+BULK_USE_OPTIONS = [5, 10, 20, 50, 100]
+BULK_EXPIRY_OPTIONS = [3, 7, 14, 30]  # days
+
+
+async def show_admin_bulk_promo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Step 1: choose credits for bulk promo."""
+    query = update.callback_query
+    await query.answer()
+
+    buttons = [
+        [InlineKeyboardButton(f"{amount} зарядов", callback_data=f"bulk_credits_{amount}")]
+        for amount in PROMO_AMOUNTS
+    ]
+    buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")])
+
+    await query.edit_message_text(
+        "🎟 Массовый промокод\n\nШаг 1/3 — Сколько зарядов даёт промокод?",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+    return ADMIN_BULK_PROMO
+
+
+async def bulk_select_credits(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Step 2: choose max uses."""
+    query = update.callback_query
+    await query.answer()
+
+    credits = int(query.data.replace("bulk_credits_", ""))
+    context.user_data["bulk_credits"] = credits
+
+    buttons = [
+        [InlineKeyboardButton(f"{n} раз", callback_data=f"bulk_uses_{n}")]
+        for n in BULK_USE_OPTIONS
+    ]
+    buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="admin_bulk_promo")])
+
+    await query.edit_message_text(
+        f"🎟 Массовый промокод\n\nЗарядов: {credits}\nШаг 2/3 — Сколько раз можно использовать?",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+    return ADMIN_BULK_PROMO
+
+
+async def bulk_select_uses(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Step 3: choose expiry."""
+    query = update.callback_query
+    await query.answer()
+
+    uses = int(query.data.replace("bulk_uses_", ""))
+    context.user_data["bulk_uses"] = uses
+
+    credits = context.user_data.get("bulk_credits", "?")
+    buttons = [
+        [InlineKeyboardButton(f"{days} дней", callback_data=f"bulk_expiry_{days}")]
+        for days in BULK_EXPIRY_OPTIONS
+    ]
+    buttons.append([InlineKeyboardButton("⬅️ Назад", callback_data="admin_bulk_promo")])
+
+    await query.edit_message_text(
+        f"🎟 Массовый промокод\n\nЗарядов: {credits} · Использований: {uses}\nШаг 3/3 — Срок действия?",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+    return ADMIN_BULK_PROMO
+
+
+async def bulk_select_expiry(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Create bulk promo code and show result."""
+    query = update.callback_query
+    await query.answer()
+
+    days = int(query.data.replace("bulk_expiry_", ""))
+    credits = context.user_data.get("bulk_credits", 10)
+    uses = context.user_data.get("bulk_uses", 10)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=days)
+
+    code = db.create_promo_code(credits=credits, max_uses=uses, expires_at=expires_at)
+
+    await query.edit_message_text(
+        f"✅ Массовый промокод создан!\n\n"
+        f"Код: {code}\n"
+        f"Зарядов: +{credits}\n"
+        f"Макс. использований: {uses}\n"
+        f"Истекает: {expires_at.strftime('%d.%m.%Y')}",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🎟 Создать ещё", callback_data="admin_bulk_promo")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+        ]),
+    )
+    context.user_data.pop("bulk_credits", None)
+    context.user_data.pop("bulk_uses", None)
+    return ADMIN_MENU
+
+
 async def admin_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Go back to admin menu."""
     query = update.callback_query
@@ -1342,7 +1405,8 @@ async def admin_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         "🔐 Админ-панель",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
-            [InlineKeyboardButton("🎁 Создать промокод", callback_data="admin_promo")],
+            [InlineKeyboardButton("🎁 Подарочный промокод", callback_data="admin_promo")],
+            [InlineKeyboardButton("🎟 Массовый промокод", callback_data="admin_bulk_promo")],
             [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
         ]),
     )
@@ -1450,6 +1514,7 @@ def main() -> None:
                 CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(show_admin_stats, pattern="^admin_stats$"),
                 CallbackQueryHandler(show_admin_promo, pattern="^admin_promo$"),
+                CallbackQueryHandler(show_admin_bulk_promo, pattern="^admin_bulk_promo$"),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
@@ -1460,6 +1525,14 @@ def main() -> None:
             ADMIN_PROMO: [
                 CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(create_promo, pattern="^create_promo_"),
+                CallbackQueryHandler(admin_back, pattern="^admin_back$"),
+            ],
+            ADMIN_BULK_PROMO: [
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
+                CallbackQueryHandler(show_admin_bulk_promo, pattern="^admin_bulk_promo$"),
+                CallbackQueryHandler(bulk_select_credits, pattern="^bulk_credits_"),
+                CallbackQueryHandler(bulk_select_uses, pattern="^bulk_uses_"),
+                CallbackQueryHandler(bulk_select_expiry, pattern="^bulk_expiry_"),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
             ],
         },

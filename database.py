@@ -50,9 +50,15 @@ def init_db() -> None:
             credits INTEGER NOT NULL,
             max_uses INTEGER,
             times_used INTEGER DEFAULT 0,
+            expires_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # Migration: add expires_at for existing databases
+    try:
+        cursor.execute("ALTER TABLE promo_codes ADD COLUMN expires_at TIMESTAMP")
+    except Exception:
+        pass  # Column already exists
 
     # Promo redemptions table (tracks who redeemed what)
     cursor.execute("""
@@ -261,7 +267,11 @@ def generate_promo_code() -> str:
     return f"PROMO-{suffix}"
 
 
-def create_promo_code(credits: int, max_uses: Optional[int] = None) -> str:
+def create_promo_code(
+    credits: int,
+    max_uses: Optional[int] = None,
+    expires_at: Optional[datetime] = None,
+) -> str:
     """Create a new promo code. Returns the generated code."""
     code = generate_promo_code()
 
@@ -272,8 +282,8 @@ def create_promo_code(credits: int, max_uses: Optional[int] = None) -> str:
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO promo_codes (code, credits, max_uses) VALUES (?, ?, ?)",
-        (code, credits, max_uses),
+        "INSERT INTO promo_codes (code, credits, max_uses, expires_at) VALUES (?, ?, ?, ?)",
+        (code, credits, max_uses, expires_at.isoformat() if expires_at else None),
     )
     conn.commit()
     conn.close()
@@ -311,6 +321,13 @@ def redeem_promo_code(telegram_id: int, code: str) -> tuple[bool, str, int]:
     if cursor.fetchone():
         conn.close()
         return False, "Ты уже использовал этот промокод", 0
+
+    # Check expiry
+    if promo["expires_at"] is not None:
+        expires_at = datetime.fromisoformat(promo["expires_at"])
+        if datetime.utcnow() > expires_at:
+            conn.close()
+            return False, "Срок действия промокода истёк", 0
 
     # Check max uses
     if promo["max_uses"] is not None and promo["times_used"] >= promo["max_uses"]:

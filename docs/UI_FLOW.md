@@ -102,45 +102,4 @@ EDGE CASES  (automatic, user never triggers these on purpose)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-NOTE
-- Reply keyboard shortcuts (`✨/💳/🎁/👥/ℹ️`) are handled in nearly all user-facing states.
-```
 
-## One Active Screen Audit (Create Magic)
-
-Legend for this audit:
-- `✅` works well for "one active screen" (edit in place, no extra menu message)
-- `⚠️` needs fix for "one active screen" (new message or delete+send jump)
-- `~` partially OK (depends on how user entered the flow)
-
-```text
-Create Magic flow (current behavior)
-
-MAIN MENU
-├── Inline button: "menu_create"                         ✅
-│   └── BROWSING root via edit_main_menu_screen          ✅
-│
-└── Reply button: "✨ Создать магию"                      ⚠️
-    └── handle_reply_create uses reply_text (new msg)    ⚠️
-
-BROWSING root / Category / Effect selection
-├── If current message is photo: edit_message_media       ✅
-└── If current message is text and target is photo:
-    delete current + send new photo                       ⚠️  (visual jump)
-
-WAITING_PHOTO
-├── Effect screen shown by editing existing photo message ✅
-└── Effect screen from text message path: delete+send     ⚠️
-
-After generation
-├── Generated result photo is preserved                   ✅
-└── Separate nav message "Выбери следующий эффект"        ⚠️ (extra active menu message)
-
-Back from result ("back_to_browse")
-├── Result photo is not edited/deleted                    ✅
-└── Browse screen is sent as new message                  ⚠️ (stacking menu messages)
-```
-
-Bottom line for current Create Magic:
-- There are correct parts (`✅`) already.
-- But full "ideal one active screen" is NOT achieved yet because reply-keyboard entry points and several text→photo transitions still create extra messages/jumps.
