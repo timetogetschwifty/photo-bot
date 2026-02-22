@@ -169,7 +169,9 @@ PROMO_AMOUNTS = [10, 25, 50, 100]
     ADMIN_STATS,
     ADMIN_PROMO,
     ADMIN_BULK_PROMO,
-) = range(12)
+    ADMIN_REPORT,
+    ADMIN_EFFECTS_REPORT,
+) = range(14)
 
 # ── Gemini client ────────────────────────────────────────────────────────────
 
@@ -819,7 +821,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 result_text = part.text
 
         if result_image is None:
-            # Refund credit
+            # Record failed generation, then refund credit
+            db.record_generation(user.id, effect_id, status="failed")
             new_balance = db.refund_credit(user.id)
             msg = f"❌ Что-то пошло не так\n\nКредит возвращён на баланс.\n⚡ Доступно зарядов: {new_balance}"
             if result_text:
@@ -870,7 +873,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
     except Exception as e:
         logger.error("Error during transformation: %s", e, exc_info=True)
-        # Refund credit
+        # Record failed generation, then refund credit
+        db.record_generation(user.id, effect_id, status="failed")
         new_balance = db.refund_credit(user.id)
 
         # Build back button that returns to the category we came from
@@ -1249,6 +1253,8 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         "🔐 Админ-панель",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
+            [InlineKeyboardButton("📈 Weekly Report", callback_data="admin_report")],
+            [InlineKeyboardButton("🗂 Raw Data", callback_data="admin_effects_report")],
             [InlineKeyboardButton("🎁 Подарочный промокод", callback_data="admin_promo")],
             [InlineKeyboardButton("🎟 Массовый промокод", callback_data="admin_bulk_promo")],
             [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
@@ -1442,12 +1448,98 @@ async def admin_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         "🔐 Админ-панель",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
+            [InlineKeyboardButton("📈 Weekly Report", callback_data="admin_report")],
+            [InlineKeyboardButton("🗂 Raw Data", callback_data="admin_effects_report")],
             [InlineKeyboardButton("🎁 Подарочный промокод", callback_data="admin_promo")],
             [InlineKeyboardButton("🎟 Массовый промокод", callback_data="admin_bulk_promo")],
             [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
         ]),
     )
     return ADMIN_MENU
+
+
+async def show_admin_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Send weekly core metrics report as Telegram text."""
+    query = update.callback_query
+    await query.answer()
+
+    r = db.get_weekly_report()
+
+    def pct(val: float) -> str:
+        return f"{round(val * 100)}%"
+
+    text = (
+        "📈 Weekly Report\n\n"
+        "ACQUISITION\n"
+        f"New Users (7d): {r['new_users']}{db._wow(r['new_users'], r['new_users_prior'])}\n"
+        f"Activation Rate (24h): {pct(r['activation_rate'])}{db._wow(r['activation_rate'], r['activation_rate_prior'])}\n\n"
+        "ENGAGEMENT\n"
+        f"Returning Active Users (7d): {r['returning_active']}{db._wow(r['returning_active'], r['returning_active_prior'])}\n"
+        f"Week-1 Activity Rate: {pct(r['week1_activity_rate'])} (cohort: {r['cohort_size']}){db._wow(r['week1_activity_rate'], r['week1_activity_rate_prior'])}\n"
+        f"Avg Generations / Active User: {r['avg_gens']:.1f}{db._wow(r['avg_gens'], r['avg_gens_prior'])}\n\n"
+        "MONETIZATION\n"
+        f"Week-1 Payment Rate: {pct(r['week1_payment_rate'])} (cohort: {r['cohort_size']}){db._wow(r['week1_payment_rate'], r['week1_payment_rate_prior'])}\n"
+        f"Revenue (7d): {r['revenue_7d']} ₽{db._wow(r['revenue_7d'], r['revenue_prior'])}\n"
+        f"RPAU-7d: {r['rpau_7d']:.1f} ₽{db._wow(r['rpau_7d'], r['rpau_prior'])}"
+    )
+
+    await query.edit_message_text(
+        text,
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+        ]),
+    )
+    return ADMIN_REPORT
+
+
+async def show_admin_effects_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Send raw data (users, generations, purchases) as Excel file."""
+    import io
+    from datetime import date
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text("⏳ Generating raw data export...")
+
+    conn = db.get_connection()
+    c = conn.cursor()
+
+    wb = Workbook()
+
+    for table in ["users", "generations", "purchases"]:
+        c.execute(f"SELECT * FROM {table}")
+        rows = c.fetchall()
+        cols = [d[0] for d in c.description]
+
+        ws = wb.create_sheet(title=table.capitalize())
+        ws.append(cols)
+        for cell in ws[1]:
+            cell.font = Font(bold=True)
+        for row in rows:
+            ws.append(list(row))
+
+    del wb["Sheet"]  # remove default empty sheet
+    conn.close()
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    await context.bot.send_document(
+        chat_id=query.message.chat_id,
+        document=buf,
+        filename=f"raw_data_{date.today()}.xlsx",
+    )
+
+    await query.edit_message_text(
+        "✅ Raw data sent! (Users / Generations / Purchases)",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+        ]),
+    )
+    return ADMIN_EFFECTS_REPORT
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -1550,6 +1642,8 @@ def main() -> None:
             ADMIN_MENU: [
                 CallbackQueryHandler(restart_bot, pattern="^restart$"),
                 CallbackQueryHandler(show_admin_stats, pattern="^admin_stats$"),
+                CallbackQueryHandler(show_admin_report, pattern="^admin_report$"),
+                CallbackQueryHandler(show_admin_effects_report, pattern="^admin_effects_report$"),
                 CallbackQueryHandler(show_admin_promo, pattern="^admin_promo$"),
                 CallbackQueryHandler(show_admin_bulk_promo, pattern="^admin_bulk_promo$"),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
@@ -1557,6 +1651,12 @@ def main() -> None:
             ],
             ADMIN_STATS: [
                 CallbackQueryHandler(restart_bot, pattern="^restart$"),
+                CallbackQueryHandler(admin_back, pattern="^admin_back$"),
+            ],
+            ADMIN_REPORT: [
+                CallbackQueryHandler(admin_back, pattern="^admin_back$"),
+            ],
+            ADMIN_EFFECTS_REPORT: [
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
             ],
             ADMIN_PROMO: [

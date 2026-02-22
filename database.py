@@ -76,9 +76,15 @@ def init_db() -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             effect_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'success',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # Migration: add status for existing databases
+    try:
+        cursor.execute("ALTER TABLE generations ADD COLUMN status TEXT NOT NULL DEFAULT 'success'")
+    except Exception:
+        pass  # Column already exists
 
     # Purchases table (tracks package purchases for revenue stats)
     cursor.execute("""
@@ -359,13 +365,13 @@ def redeem_promo_code(telegram_id: int, code: str) -> tuple[bool, str, int]:
 # ── Generation Tracking ──────────────────────────────────────────────────────
 
 
-def record_generation(telegram_id: int, effect_id: str) -> None:
-    """Record a generation for statistics."""
+def record_generation(telegram_id: int, effect_id: str, status: str = "success") -> None:
+    """Record a generation attempt for statistics."""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO generations (user_id, effect_id) VALUES (?, ?)",
-        (telegram_id, effect_id),
+        "INSERT INTO generations (user_id, effect_id, status) VALUES (?, ?, ?)",
+        (telegram_id, effect_id, status),
     )
     conn.commit()
     conn.close()
@@ -443,6 +449,154 @@ def get_stats() -> dict:
         "total_revenue": total_revenue,
         "effect_stats": effect_stats,
         "package_stats": package_stats,
+    }
+
+
+# ── Report Helpers ────────────────────────────────────────────────────────────
+
+
+def _wow(current: float, prior: float) -> str:
+    """Format week-over-week delta string."""
+    if prior == 0 and current > 0:
+        return " (new)"
+    if prior == 0 or (current == 0 and prior == 0):
+        return ""
+    pct = round((current - prior) / prior * 100)
+    sign = "+" if pct >= 0 else ""
+    return f" ({sign}{pct}%)"
+
+
+# ── Weekly Report ─────────────────────────────────────────────────────────────
+
+
+def get_weekly_report() -> dict:
+    """Compute 8 core metrics for current and prior 7-day window."""
+    conn = get_connection()
+    c = conn.cursor()
+
+    # 1. New Users
+    c.execute("SELECT COUNT(*) FROM users WHERE created_at >= date('now', '-7 days')")
+    new_users = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM users WHERE created_at >= date('now', '-14 days') AND created_at < date('now', '-7 days')")
+    new_users_prior = c.fetchone()[0]
+
+    # 2. Activation Rate (24h) — new users with a success gen within 24h of signup
+    c.execute("""
+        SELECT COUNT(DISTINCT u.telegram_id) FROM users u
+        JOIN generations g ON g.user_id = u.telegram_id
+        WHERE u.created_at >= date('now', '-7 days')
+          AND g.status = 'success'
+          AND g.created_at <= datetime(u.created_at, '+24 hours')
+    """)
+    activated = c.fetchone()[0]
+    activation_rate = activated / new_users if new_users > 0 else 0.0
+
+    c.execute("""
+        SELECT COUNT(DISTINCT u.telegram_id) FROM users u
+        JOIN generations g ON g.user_id = u.telegram_id
+        WHERE u.created_at >= date('now', '-14 days') AND u.created_at < date('now', '-7 days')
+          AND g.status = 'success'
+          AND g.created_at <= datetime(u.created_at, '+24 hours')
+    """)
+    activated_prior = c.fetchone()[0]
+    activation_rate_prior = activated_prior / new_users_prior if new_users_prior > 0 else 0.0
+
+    # 3. Returning Active Users (7d)
+    c.execute("""
+        SELECT COUNT(DISTINCT g.user_id) FROM generations g
+        JOIN users u ON u.telegram_id = g.user_id
+        WHERE u.created_at < date('now', '-7 days')
+          AND g.created_at >= date('now', '-7 days')
+          AND g.status = 'success'
+    """)
+    returning_active = c.fetchone()[0]
+
+    c.execute("""
+        SELECT COUNT(DISTINCT g.user_id) FROM generations g
+        JOIN users u ON u.telegram_id = g.user_id
+        WHERE u.created_at < date('now', '-14 days')
+          AND g.created_at >= date('now', '-14 days') AND g.created_at < date('now', '-7 days')
+          AND g.status = 'success'
+    """)
+    returning_active_prior = c.fetchone()[0]
+
+    # 4. Week-1 Activity Rate — cohort signed up 14-7d ago, gen in first 7 days
+    c.execute("SELECT COUNT(*) FROM users WHERE created_at >= date('now', '-14 days') AND created_at < date('now', '-7 days')")
+    cohort_size = c.fetchone()[0]
+    c.execute("""
+        SELECT COUNT(DISTINCT u.telegram_id) FROM users u
+        JOIN generations g ON g.user_id = u.telegram_id
+        WHERE u.created_at >= date('now', '-14 days') AND u.created_at < date('now', '-7 days')
+          AND g.status = 'success'
+          AND g.created_at >= u.created_at
+          AND g.created_at < datetime(u.created_at, '+7 days')
+    """)
+    week1_active = c.fetchone()[0]
+    week1_activity_rate = week1_active / cohort_size if cohort_size > 0 else 0.0
+
+    c.execute("SELECT COUNT(*) FROM users WHERE created_at >= date('now', '-21 days') AND created_at < date('now', '-14 days')")
+    cohort_size_prior = c.fetchone()[0]
+    c.execute("""
+        SELECT COUNT(DISTINCT u.telegram_id) FROM users u
+        JOIN generations g ON g.user_id = u.telegram_id
+        WHERE u.created_at >= date('now', '-21 days') AND u.created_at < date('now', '-14 days')
+          AND g.status = 'success'
+          AND g.created_at >= u.created_at
+          AND g.created_at < datetime(u.created_at, '+7 days')
+    """)
+    week1_active_prior = c.fetchone()[0]
+    week1_activity_rate_prior = week1_active_prior / cohort_size_prior if cohort_size_prior > 0 else 0.0
+
+    # 5. Avg Generations per Active User
+    c.execute("SELECT COUNT(*) FROM generations WHERE created_at >= date('now', '-7 days') AND status = 'success'")
+    gens_7d = c.fetchone()[0]
+    avg_gens = gens_7d / returning_active if returning_active > 0 else 0.0
+
+    c.execute("SELECT COUNT(*) FROM generations WHERE created_at >= date('now', '-14 days') AND created_at < date('now', '-7 days') AND status = 'success'")
+    gens_prior = c.fetchone()[0]
+    avg_gens_prior = gens_prior / returning_active_prior if returning_active_prior > 0 else 0.0
+
+    # 6. Week-1 Payment Rate — cohort 14-7d ago, paid in first 7 days
+    c.execute("""
+        SELECT COUNT(DISTINCT u.telegram_id) FROM users u
+        JOIN purchases p ON p.user_id = u.telegram_id
+        WHERE u.created_at >= date('now', '-14 days') AND u.created_at < date('now', '-7 days')
+          AND p.created_at >= u.created_at
+          AND p.created_at < datetime(u.created_at, '+7 days')
+    """)
+    week1_paid = c.fetchone()[0]
+    week1_payment_rate = week1_paid / cohort_size if cohort_size > 0 else 0.0
+
+    c.execute("""
+        SELECT COUNT(DISTINCT u.telegram_id) FROM users u
+        JOIN purchases p ON p.user_id = u.telegram_id
+        WHERE u.created_at >= date('now', '-21 days') AND u.created_at < date('now', '-14 days')
+          AND p.created_at >= u.created_at
+          AND p.created_at < datetime(u.created_at, '+7 days')
+    """)
+    week1_paid_prior = c.fetchone()[0]
+    week1_payment_rate_prior = week1_paid_prior / cohort_size_prior if cohort_size_prior > 0 else 0.0
+
+    # 7 & 8. Revenue (7d) and RPAU-7d
+    c.execute("SELECT COALESCE(SUM(price_rub), 0) FROM purchases WHERE created_at >= date('now', '-7 days')")
+    revenue_7d = c.fetchone()[0]
+    rpau_7d = revenue_7d / returning_active if returning_active > 0 else 0.0
+
+    c.execute("SELECT COALESCE(SUM(price_rub), 0) FROM purchases WHERE created_at >= date('now', '-14 days') AND created_at < date('now', '-7 days')")
+    revenue_prior = c.fetchone()[0]
+    rpau_prior = revenue_prior / returning_active_prior if returning_active_prior > 0 else 0.0
+
+    conn.close()
+    return {
+        "new_users": new_users, "new_users_prior": new_users_prior,
+        "activation_rate": activation_rate, "activation_rate_prior": activation_rate_prior,
+        "returning_active": returning_active, "returning_active_prior": returning_active_prior,
+        "week1_activity_rate": week1_activity_rate, "week1_activity_rate_prior": week1_activity_rate_prior,
+        "cohort_size": cohort_size, "cohort_size_prior": cohort_size_prior,
+        "avg_gens": avg_gens, "avg_gens_prior": avg_gens_prior,
+        "week1_payment_rate": week1_payment_rate, "week1_payment_rate_prior": week1_payment_rate_prior,
+        "revenue_7d": revenue_7d, "revenue_prior": revenue_prior,
+        "rpau_7d": rpau_7d, "rpau_prior": rpau_prior,
     }
 
 
