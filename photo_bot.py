@@ -423,6 +423,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # Parse deep link parameters
     referred_by = None
     auto_browse = False
+    acquisition_source = None
+
+    KNOWN_SOURCES = {"src_vk": "vk", "src_instagram": "instagram", "src_tiktok": "tiktok"}
 
     if args:
         param = args[0]
@@ -437,12 +440,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         # Browse deep link: /start browse
         elif param == "browse":
             auto_browse = True
+        # Source tracking: /start src_vk, src_instagram, src_tiktok
+        elif param in KNOWN_SOURCES:
+            acquisition_source = KNOWN_SOURCES[param]
 
     # Get or create user
     db_user, is_new = db.get_or_create_user(
         telegram_id=user.id,
         username=user.username,
         referred_by=referred_by,
+        acquisition_source=acquisition_source,
     )
 
     credits = db_user["credits"]

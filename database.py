@@ -60,6 +60,12 @@ def init_db() -> None:
     except Exception:
         pass  # Column already exists
 
+    # Migration: add acquisition_source to users
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN acquisition_source TEXT")
+    except Exception:
+        pass  # Column already exists
+
     # Promo redemptions table (tracks who redeemed what)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS promo_redemptions (
@@ -141,16 +147,17 @@ def create_user(
     telegram_id: int,
     username: Optional[str] = None,
     referred_by: Optional[int] = None,
+    acquisition_source: Optional[str] = None,
 ) -> sqlite3.Row:
     """Create a new user with 3 free credits."""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
         """
-        INSERT INTO users (telegram_id, username, referred_by)
-        VALUES (?, ?, ?)
+        INSERT INTO users (telegram_id, username, referred_by, acquisition_source)
+        VALUES (?, ?, ?, ?)
         """,
-        (telegram_id, username, referred_by),
+        (telegram_id, username, referred_by, acquisition_source),
     )
     conn.commit()
     conn.close()
@@ -161,6 +168,7 @@ def get_or_create_user(
     telegram_id: int,
     username: Optional[str] = None,
     referred_by: Optional[int] = None,
+    acquisition_source: Optional[str] = None,
 ) -> tuple[sqlite3.Row, bool]:
     """
     Get existing user or create new one.
@@ -181,7 +189,7 @@ def get_or_create_user(
             user = get_user(telegram_id)
         return user, False
     else:
-        return create_user(telegram_id, username, referred_by), True
+        return create_user(telegram_id, username, referred_by, acquisition_source), True
 
 
 def add_credits(telegram_id: int, amount: int) -> int:
