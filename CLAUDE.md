@@ -11,3 +11,7 @@ Claude entrypoint for `Photo bot/`.
 
 - Follow `PROJECT_RULES.md` as the source of truth.
 - Keep task-specific reasoning and outputs concise.
+
+## SQLite Gotchas
+
+- `ALTER TABLE ADD COLUMN` does NOT support `DEFAULT CURRENT_TIMESTAMP` (or any non-constant default). Add the column without a default, then backfill with `UPDATE`.

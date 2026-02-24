@@ -10,6 +10,7 @@ startCommand = "python photo_bot.py"
 
 # Scheduled notifications
 [[crons]]
-# N1: Welcome Reminder - Daily at 10 AM MSK (7 AM UTC)
-schedule = "0 7 * * *"
+# Scheduled notifications - Daily at 11 AM MSK (8 AM UTC)
+# Runs: N1 (Welcome), N4 (Win-Back, Mon only), N9 (Abandoned), N10 (Zero Balance)
+schedule = "0 8 * * *"
 command = "python jobs/notification_jobs.py"

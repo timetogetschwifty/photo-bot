@@ -171,7 +171,8 @@ PROMO_AMOUNTS = [10, 25, 50, 100]
     ADMIN_BULK_PROMO,
     ADMIN_REPORT,
     ADMIN_EFFECTS_REPORT,
-) = range(14)
+    ADMIN_BROADCAST,
+) = range(15)
 
 # ── Gemini client ────────────────────────────────────────────────────────────
 
@@ -452,6 +453,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         acquisition_source=acquisition_source,
     )
 
+    db.update_last_active(user.id)
+
     credits = db_user["credits"]
     name = user.first_name or "друг"
 
@@ -697,21 +700,17 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         current_category = context.user_data.get('current_category')
         back_callback = f"cat_{current_category}" if current_category else "browse_root"
 
-        # Credits exhausted message (upsell to buy or refer)
-        ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
-
+        # Credits exhausted message (inline UI)
         message = (
-            "😢 <b>Заряды закончились!</b>\n\n"
-            "Но не переживай — продолжить легко:\n\n"
-            "🎁 <b>Специальное предложение:</b>\n"
-            "10 зарядов всего за 99 ₽\n\n"
-            "Или пригласи друга и получи <b>+3 заряда бесплатно</b>! 👥\n\n"
-            f"Твоя ссылка:\n<code>{ref_link}</code>"
+            "😮‍💨 Заряды кончились. Бывает.\n\n"
+            "Но останавливаться необязательно:\n\n"
+            "💳 Пополнить → от 99 ₽\n"
+            "👥 Позвать друга → +3 заряда бесплатно"
         )
 
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("💳 Купить заряды", callback_data="menu_store")],
-            [InlineKeyboardButton("👥 Пригласить друга", callback_data="menu_referral")],
+            [InlineKeyboardButton("💳 Пополнить", callback_data="menu_store")],
+            [InlineKeyboardButton("👥 Позвать друга", callback_data="menu_referral")],
             [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
         ])
 
@@ -766,21 +765,17 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
     # Deduct credit
     if not db.deduct_credit(user.id):
-        # Credits exhausted message (upsell to buy or refer)
-        ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
-
+        # Credits exhausted message (inline UI)
         message = (
-            "😢 <b>Заряды закончились!</b>\n\n"
-            "Но не переживай — продолжить легко:\n\n"
-            "🎁 <b>Специальное предложение:</b>\n"
-            "10 зарядов всего за 99 ₽\n\n"
-            "Или пригласи друга и получи <b>+3 заряда бесплатно</b>! 👥\n\n"
-            f"Твоя ссылка:\n<code>{ref_link}</code>"
+            "😮‍💨 Заряды кончились. Бывает.\n\n"
+            "Но останавливаться необязательно:\n\n"
+            "💳 Пополнить → от 99 ₽\n"
+            "👥 Позвать друга → +3 заряда бесплатно"
         )
 
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("💳 Купить заряды", callback_data="menu_store")],
-            [InlineKeyboardButton("👥 Пригласить друга", callback_data="menu_referral")],
+            [InlineKeyboardButton("💳 Пополнить", callback_data="menu_store")],
+            [InlineKeyboardButton("👥 Позвать друга", callback_data="menu_referral")],
             [InlineKeyboardButton("⬅️ Главное меню", callback_data="back_to_main")],
         ])
 
@@ -848,16 +843,25 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
         # Record generation for statistics
         db.record_generation(user.id, effect_id)
+        db.update_last_active(user.id)
 
-        # Check if we should credit referrer (first generation)
-        referrer_id = db.mark_referral_credited(user.id)
+        # Credit referrer on first generation (only for referrer's first 10 referrals)
+        referrer_id = db.credit_referral_on_generation(user.id)
         if referrer_id:
             db.add_credits(referrer_id, 3)
-            logger.info(f"Credited referrer {referrer_id} with 3 credits for user {user.id}")
+            logger.info(f"Credited referrer {referrer_id} with 3 credits (generation) for user {user.id}")
 
         # Get updated balance
         db_user = db.get_user(user.id)
         remaining = db_user["credits"] if db_user else 0
+
+        # Real-time notification triggers
+        gen_count = db.get_user_generation_count(user.id)
+
+        # N2: Credits Running Low
+        if remaining == 1:
+            await notif.send_credits_low_warning(user.id)
+
 
         # Send result
         output_buffer = io.BytesIO()
@@ -993,6 +997,7 @@ async def buy_package(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
             send_email_to_provider=True,
         )
         context.user_data["pending_invoice_message_id"] = invoice_msg.message_id
+        db.record_invoice(update.effective_user.id, package_id)
 
         # Send cancel button separately (invoices can't have inline buttons)
         cancel_msg = await context.bot.send_message(
@@ -1021,6 +1026,7 @@ async def cancel_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     query = update.callback_query
     await query.answer()
     context.user_data.pop("pending_package", None)
+    db.mark_invoice_cancelled(update.effective_user.id)
 
     # Remove cancel prompt message
     try:
@@ -1113,6 +1119,18 @@ async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE)
         # Add credits and record purchase
         new_balance = db.add_credits(user.id, credits)
         db.record_purchase(user.id, credits, price_rub)
+        db.update_last_active(user.id)
+        db.mark_invoice_paid(user.id, package_id)
+
+        # Credit referrer on first payment (for referrer's 11th+ referrals)
+        referrer_id = db.credit_referral_on_payment(user.id)
+        if referrer_id:
+            db.add_credits(referrer_id, 3)
+            logger.info(f"Credited referrer {referrer_id} with 3 credits (payment) for user {user.id}")
+
+        # N7: First Purchase Thank You
+        if db.get_user_purchase_count(user.id) == 1:
+            await notif.send_first_purchase_thanks(user.id)
 
         await update.message.reply_text(
             f"✅ Оплата прошла!\n+{credits} зарядов добавлено\n\n⚡ Доступно зарядов: {new_balance}",
@@ -1152,6 +1170,7 @@ async def handle_promo_code(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     success, message, credits = db.redeem_promo_code(user.id, code)
 
     if success:
+        db.update_last_active(user.id)
         db_user = db.get_user(user.id)
         new_balance = db_user["credits"] if db_user else 0
         await update.message.reply_text(
@@ -1264,6 +1283,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             [InlineKeyboardButton("🗂 Raw Data", callback_data="admin_effects_report")],
             [InlineKeyboardButton("🎁 Подарочный промокод", callback_data="admin_promo")],
             [InlineKeyboardButton("🎟 Массовый промокод", callback_data="admin_bulk_promo")],
+            [InlineKeyboardButton("📢 Рассылка новых эффектов", callback_data="admin_broadcast")],
             [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
         ]),
     )
@@ -1459,6 +1479,7 @@ async def admin_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             [InlineKeyboardButton("🗂 Raw Data", callback_data="admin_effects_report")],
             [InlineKeyboardButton("🎁 Подарочный промокод", callback_data="admin_promo")],
             [InlineKeyboardButton("🎟 Массовый промокод", callback_data="admin_bulk_promo")],
+            [InlineKeyboardButton("📢 Рассылка новых эффектов", callback_data="admin_broadcast")],
             [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
         ]),
     )
@@ -1547,6 +1568,70 @@ async def show_admin_effects_report(update: Update, context: ContextTypes.DEFAUL
         ]),
     )
     return ADMIN_EFFECTS_REPORT
+
+
+# ── N5: Admin Broadcast (New Effects) ─────────────────────────────────────────
+
+
+async def show_admin_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """N5: Ask admin for the effects list to broadcast."""
+    query = update.callback_query
+    await query.answer()
+
+    # Count eligible users
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) FROM users WHERE last_active_at >= datetime('now', '-14 days')"
+    )
+    count = cursor.fetchone()[0]
+    conn.close()
+
+    await query.edit_message_text(
+        f"📢 Рассылка новых эффектов (N5)\n\n"
+        f"Получателей: {count} (активные за 14 дней)\n\n"
+        "Отправь список новых эффектов (каждый с новой строки).\n"
+        "Например:\n"
+        "🎭 Гангстер из 90-х\n"
+        "👑 Египетский фараон",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+        ]),
+    )
+    return ADMIN_BROADCAST
+
+
+async def handle_admin_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """N5: Send new effects broadcast to active users."""
+    import asyncio
+
+    effects_list = update.message.text.strip()
+
+    # Get active users
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT telegram_id, credits FROM users WHERE last_active_at >= datetime('now', '-14 days')"
+    )
+    users = cursor.fetchall()
+    conn.close()
+
+    await update.message.reply_text(f"⏳ Отправляю {len(users)} пользователям...")
+
+    sent_count = 0
+    for u in users:
+        success = await notif.send_new_effects(u["telegram_id"], effects_list)
+        if success:
+            sent_count += 1
+        await asyncio.sleep(0.1)  # Rate limit
+
+    await update.message.reply_text(
+        f"✅ Рассылка завершена!\nОтправлено: {sent_count}/{len(users)}",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Админ-панель", callback_data="admin_back")],
+        ]),
+    )
+    return ADMIN_MENU
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -1653,6 +1738,7 @@ def main() -> None:
                 CallbackQueryHandler(show_admin_effects_report, pattern="^admin_effects_report$"),
                 CallbackQueryHandler(show_admin_promo, pattern="^admin_promo$"),
                 CallbackQueryHandler(show_admin_bulk_promo, pattern="^admin_bulk_promo$"),
+                CallbackQueryHandler(show_admin_broadcast, pattern="^admin_broadcast$"),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
@@ -1677,6 +1763,10 @@ def main() -> None:
                 CallbackQueryHandler(bulk_select_credits, pattern="^bulk_credits_"),
                 CallbackQueryHandler(bulk_select_uses, pattern="^bulk_uses_"),
                 CallbackQueryHandler(bulk_select_expiry, pattern="^bulk_expiry_"),
+                CallbackQueryHandler(admin_back, pattern="^admin_back$"),
+            ],
+            ADMIN_BROADCAST: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_broadcast),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
             ],
         },

@@ -66,6 +66,16 @@ def init_db() -> None:
     except Exception:
         pass  # Column already exists
 
+    # Migration: add last_active_at to users (for notification triggers N4, N5, N10)
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN last_active_at TIMESTAMP")
+    except Exception:
+        pass  # Column already exists
+    try:
+        cursor.execute("UPDATE users SET last_active_at = created_at WHERE last_active_at IS NULL")
+    except Exception:
+        pass
+
     # Promo redemptions table (tracks who redeemed what)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS promo_redemptions (
@@ -113,6 +123,18 @@ def init_db() -> None:
             opened BOOLEAN DEFAULT 0,
             clicked BOOLEAN DEFAULT 0,
             FOREIGN KEY (user_id) REFERENCES users(telegram_id)
+        )
+    """)
+
+    # Invoices table (tracks sent invoices for N9 abandoned payment detection)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS invoices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            package_id TEXT NOT NULL,
+            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            paid BOOLEAN DEFAULT 0,
+            notified BOOLEAN DEFAULT 0
         )
     """)
 
@@ -251,9 +273,19 @@ def refund_credit(telegram_id: int) -> int:
     return result["credits"] if result else 0
 
 
-def mark_referral_credited(referred_user_id: int) -> Optional[int]:
+def _count_credited_referrals(cursor: sqlite3.Cursor, referrer_id: int) -> int:
+    """Count how many referral bonuses this user has already earned as a referrer."""
+    cursor.execute(
+        "SELECT COUNT(*) FROM users WHERE referred_by = ? AND referral_credited = 1",
+        (referrer_id,),
+    )
+    return cursor.fetchone()[0]
+
+
+def credit_referral_on_generation(referred_user_id: int) -> Optional[int]:
     """
-    Mark that referral bonus was credited for this user.
+    Credit referral bonus when the referred user completes their first generation.
+    Only applies for the referrer's first 10 referrals (credits 1–30).
     Returns the referrer's telegram_id if bonus should be given, None otherwise.
     """
     user = get_user(referred_user_id)
@@ -262,6 +294,37 @@ def mark_referral_credited(referred_user_id: int) -> Optional[int]:
 
     conn = get_connection()
     cursor = conn.cursor()
+    count = _count_credited_referrals(cursor, user["referred_by"])
+    if count >= 10:
+        conn.close()
+        return None  # Referrer is past the free tier; wait for payment
+
+    cursor.execute(
+        "UPDATE users SET referral_credited = 1 WHERE telegram_id = ?",
+        (referred_user_id,),
+    )
+    conn.commit()
+    conn.close()
+    return user["referred_by"]
+
+
+def credit_referral_on_payment(referred_user_id: int) -> Optional[int]:
+    """
+    Credit referral bonus when the referred user makes their first payment.
+    Only applies once the referrer has already earned 10+ referral bonuses.
+    Returns the referrer's telegram_id if bonus should be given, None otherwise.
+    """
+    user = get_user(referred_user_id)
+    if not user or not user["referred_by"] or user["referral_credited"]:
+        return None
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    count = _count_credited_referrals(cursor, user["referred_by"])
+    if count < 10:
+        conn.close()
+        return None  # Referrer is still in the free tier; generation will handle it
+
     cursor.execute(
         "UPDATE users SET referral_credited = 1 WHERE telegram_id = ?",
         (referred_user_id,),
@@ -606,6 +669,111 @@ def get_weekly_report() -> dict:
         "revenue_7d": revenue_7d, "revenue_prior": revenue_prior,
         "rpau_7d": rpau_7d, "rpau_prior": rpau_prior,
     }
+
+
+# ── Activity Tracking ──────────────────────────────────────────────────────
+
+
+def update_last_active(telegram_id: int) -> None:
+    """Update user's last_active_at timestamp."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE telegram_id = ?",
+        (telegram_id,),
+    )
+    conn.commit()
+    conn.close()
+
+
+# ── Invoice Tracking (for N9 Abandoned Payment) ───────────────────────────
+
+
+def record_invoice(telegram_id: int, package_id: str) -> int:
+    """Record that an invoice was sent. Returns invoice ID."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO invoices (user_id, package_id) VALUES (?, ?)",
+        (telegram_id, package_id),
+    )
+    invoice_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return invoice_id
+
+
+def mark_invoice_paid(telegram_id: int, package_id: str) -> None:
+    """Mark the most recent unpaid invoice for this user+package as paid."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        UPDATE invoices SET paid = 1
+        WHERE id = (
+            SELECT id FROM invoices
+            WHERE user_id = ? AND package_id = ? AND paid = 0
+            ORDER BY sent_at DESC LIMIT 1
+        )
+        """,
+        (telegram_id, package_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def mark_invoice_cancelled(telegram_id: int) -> None:
+    """Mark all unpaid invoices for this user as paid (cancelled)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE invoices SET paid = 1 WHERE user_id = ? AND paid = 0",
+        (telegram_id,),
+    )
+    conn.commit()
+    conn.close()
+
+
+# ── Notification Helper Queries ────────────────────────────────────────────
+
+
+def get_user_generation_count(telegram_id: int) -> int:
+    """Count successful generations for a user."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) FROM generations WHERE user_id = ? AND status = 'success'",
+        (telegram_id,),
+    )
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
+
+
+def get_user_purchase_count(telegram_id: int) -> int:
+    """Count purchases for a user."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) FROM purchases WHERE user_id = ?",
+        (telegram_id,),
+    )
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
+
+
+def get_user_referral_count(telegram_id: int) -> int:
+    """Count how many users were referred by this user."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) FROM users WHERE referred_by = ?",
+        (telegram_id,),
+    )
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
 
 
 # Initialize database on import

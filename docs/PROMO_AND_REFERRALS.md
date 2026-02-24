@@ -54,23 +54,34 @@ https://t.me/<BOT_USERNAME>?start=ref_<telegram_id>
 
 Shown in the "👥 Пригласить друга" screen.
 
-Reward: **+3 credits** to the referrer when the invited user completes their **first generation**.
+Reward: **+3 credits** to the referrer, but the trigger depends on how many referrals the referrer has already earned:
+
+| Referrer's credited referrals so far | Trigger for the next bonus |
+|--------------------------------------|---------------------------|
+| 0 – 9 (earning credits 1–30) | Referred user's **first generation** |
+| 10+ (earning credits 31+) | Referred user's **first payment** |
 
 ### How it works
 
 1. User shares their link
 2. New user clicks link → Telegram opens bot with `/start ref_123456`
 3. On `/start`, `referred_by = 123456` is saved to the new user's record (only at account creation)
-4. When the new user successfully generates their first image, `mark_referral_credited()` runs:
+4. When the new user successfully generates their first image, `credit_referral_on_generation()` runs:
    - Checks `referred_by` is set and `referral_credited = 0`
-   - Sets `referral_credited = 1` (permanent flag)
-   - Returns the referrer's ID → bot adds +3 credits to referrer
+   - Counts how many referral bonuses the referrer has already received
+   - If **< 10**: sets `referral_credited = 1`, returns referrer ID → bot adds +3 credits
+   - If **≥ 10**: does nothing (deferred to first payment)
+5. When the referred user makes their first payment, `credit_referral_on_payment()` runs:
+   - Same checks as above
+   - If **≥ 10** credited referrals on the referrer's side: sets `referral_credited = 1`, returns referrer ID → bot adds +3 credits
+   - If **< 10**: does nothing (was/will be handled at generation)
 
 ### Conditions for referral bonus to be credited
 
 - Referred user must be **new** (existing users clicking a ref link are ignored)
-- Referred user must complete at least one successful generation
 - Bonus has not been credited before (`referral_credited = 0`)
+- For referrals 1–10: referred user must complete at least one successful generation
+- For referrals 11+: referred user must make at least one payment
 
 ### Abuse protection
 
@@ -79,8 +90,9 @@ Reward: **+3 credits** to the referrer when the invited user completes their **f
 | Can't refer yourself | `if referred_by == user.id: referred_by = None` in `/start` handler |
 | One bonus per referred user | `referral_credited` flag set to `1` after first credit — never credited again |
 | Referral only set at signup | `get_or_create_user` only passes `referred_by` to `create_user`; existing users are never updated |
-| Bonus requires real usage | Triggered on first **successful generation**, not on signup |
+| First 10 bonuses require real usage | Triggered on first **successful generation**, not on signup |
+| Bonuses 11+ require paying users | Triggered only after referred user makes their **first payment** — fake accounts farming free credits yield nothing past the first 30 |
 
 **Gaps / no protection against:**
-- A user creating many fake accounts to farm referral credits (no rate limit or device/IP check — Telegram doesn't expose this)
-- Referred user getting 3 free credits from signup and never generating (referrer gets nothing — this is fine by design)
+- First 10 referrals can still be farmed with throwaway accounts (each earns 3 free credits then generates once)
+- Referred user getting 3 free credits from signup and never generating/paying (referrer gets nothing — fine by design)
