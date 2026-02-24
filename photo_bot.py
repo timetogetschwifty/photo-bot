@@ -9,6 +9,7 @@ import os
 import io
 import json
 import logging
+import warnings
 import yaml
 from datetime import datetime, timedelta, timezone
 
@@ -1653,6 +1654,8 @@ def main() -> None:
         MessageHandler(filters.Regex("^ℹ️ О проекте$"), show_about_from_text),
     ]
 
+    # per_message=False is intentional: allows old inline buttons to work after restarts
+    warnings.filterwarnings("ignore", message="If 'per_message=False'", category=UserWarning)
     # Main conversation handler
     conv_handler = ConversationHandler(
         entry_points=[
