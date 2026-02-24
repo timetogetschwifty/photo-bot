@@ -6,3 +6,6 @@ __pycache__/
 .DS_Store
 testing/
 test_prompt.py
+FOUNDERS_AGREEMENT.md
+docs/gpt_prompts/
+tests/
