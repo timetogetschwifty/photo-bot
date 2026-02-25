@@ -659,7 +659,7 @@ async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     db_user = db.get_user(user.id)
     credits = db_user["credits"] if db_user else 0
 
-    category_id = query.data.replace("cat_", "")
+    category_id = query.data.removeprefix("cat_")
 
     # Validate category exists
     if category_id and category_id not in CATEGORIES:
