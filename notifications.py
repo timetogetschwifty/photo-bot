@@ -186,10 +186,7 @@ async def send_winback_offer(user_id: int) -> bool:
 
 async def send_new_effects(user_id: int, drop_name: str) -> bool:
     """N5: New Drop Available — manual admin broadcast."""
-    message = (
-        f"🔥 Новый дроп!\n\n"
-        f"{drop_name}"
-    )
+    message = drop_name
 
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("✨ Смотреть", url=f"https://t.me/{_get_bot_username()}?start=browse")]
