@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the cat’s facial identity or unique markings. Do not replicate the original photo’s body pose, posture, or composition. Remove all other subjects completely, including any partial faces, hands, arms, bodies, or tails from others; only the main cat remains. Only transform the SOLO subject selected by sharpest_face; if tied, choose largest_face > sharpest_face > center_face > first detected. No modern items, no collars/leashes, no text, no watermarks, no logos. No extra limbs, no duplicated jewelry, no headdress clipping through ears.
+
+Transformation directives: Style the selected cat as regal ancient royalty with a striped nemes headdress fitted around the head and ears comfortably, plus a layered gold collar with gemstone accents that subtly pick up highlights matching the cat’s eye color. Transform the background into a torchlit temple wall with carved hieroglyph-like patterns (generic, not readable text), cinematic shadows, and warm flicker light. Create a commanding portrait: the cat sitting upright on a stone plinth, paws neatly placed, camera at cat-eye level with a slight upward angle to amplify grandeur. Add a gentle ember-like atmosphere with soft drifting dust and warm rim light on gold edges.
+
+Identity invariants: Preserve the exact facial likeness of the cat (face shape, eye shape, nose, mouth, whisker pads), fur pattern, fur color, and any distinctive marks; keep the face photographic and unchanged.
+
+Technical/realism: Photorealistic gold metalwork with realistic specular highlights, torchlit chiaroscuro, high detail fur and whiskers with no artifacts.
+===END PROMPT===

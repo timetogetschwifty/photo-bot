@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the cat’s facial identity or unique markings. Do not replicate the original photo’s body pose, posture, or composition. Blur all other subjects; no other subjects’ hands/arms/paws interacting with the main subject, only the main subject’s own body visible in the foreground. Only transform the SOLO subject selected by center_face; if tied, choose largest_face > sharpest_face > center_face > first detected. No text, no readable band names, no watermarks, no logos. No extra limbs, no spikes piercing fur unrealistically, no zipper artifacts.
+
+Transformation directives: Give the selected cat a tiny leather jacket tailored to feline shoulders and chest, with chrome spikes along the collar and shoulders, zipper details, and a few abstract “band-patch” style fabric pieces (no readable text). Transform the background into a gritty backstage corridor: worn walls, scattered concert-sticker shapes (abstract), harsh flash lighting, and a moody, slightly messy vibe. Set a “don’t talk to me” portrait pose: the cat sitting with a slight lean, shoulders forward, camera at cat-eye level with a tight mid-shot framing and a punchy flash look. Add subtle specular highlights on leather and metal for realism.
+
+Identity invariants: Preserve the exact facial likeness of the cat (face shape, eye shape, nose, mouth, whisker pads), fur pattern, fur color, and any distinctive marks; keep the face photographic and unchanged.
+
+Technical/realism: Photorealistic leather grain, metal spike reflections, controlled flash shadows, sharp focus on the face and jacket details.
+===END PROMPT===

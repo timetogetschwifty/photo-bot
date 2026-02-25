@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the cat’s facial identity or unique markings. Do not replicate the original photo’s body pose, posture, or composition. Keep other people/animals unchanged in the background_only, but do not let any other subject touch or overlap the main cat; no arms/hands/paws from others entering the main subject area. Only transform the SOLO subject selected by center_face; if tied, choose largest_face > sharpest_face > center_face > first detected. No text, no readable signs, no watermarks, no logos. No extra limbs, no smeared shadows, no distorted hat brim.
+
+Transformation directives: Give the selected cat a tiny noir detective trench coat and a small fedora sized to fit without covering the eyes. Add dramatic side-lighting that casts a sharp, classic noir shadow across part of the face while keeping facial features readable. Transform the background into a smoky black-and-white street scene with rain streaks, wet pavement shine, and a subtle grayscale “neon glow” effect (no readable signage). Create a cinematic investigation pose: the cat standing with a slight forward lean as if listening, camera low and close with a tight portrait crop, strong contrast and film-noir mood. Add a faint mist and rain atmosphere for depth.
+
+Identity invariants: Preserve the exact facial likeness of the cat (face shape, eye shape, nose, mouth, whisker pads), fur pattern, fur color, and any distinctive marks; keep the face photographic and unchanged.
+
+Technical/realism: Photorealistic noir lighting with controlled highlights, crisp rain streaks, realistic fabric folds, and sharp focus on the cat’s face.
+===END PROMPT===

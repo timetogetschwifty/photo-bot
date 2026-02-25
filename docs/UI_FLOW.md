@@ -81,11 +81,20 @@ ADMIN  (/admin, ADMIN_ID only)
 └── ADMIN_MENU  [📝 ⌨️]
     ├── 📊 Статистика → ADMIN_STATS  [📝 ⌨️]
     │       └── ⬅️ Назад → ADMIN_MENU
+    ├── 📈 Weekly Report → sends weekly metrics message  [📝 ⌨️]
+    │       └── ⬅️ Назад → ADMIN_MENU
+    ├── 🗂 Raw Data → sends Excel file (users/generations/purchases)  [📝 ⌨️]
+    │       └── ⬅️ Назад → ADMIN_MENU
     ├── 🎁 Создать промокод → ADMIN_PROMO  [📝 ⌨️]
     │       ├── 10 зарядов ─┐
     │       ├── 25 зарядов  ├─► PROMO CREATED  [📝 ⌨️]
     │       ├── 50 зарядов  │       ├── 🎁 Создать ещё → ADMIN_PROMO
     │       ├── 100 зарядов ┘       └── ⬅️ Назад → ADMIN_MENU
+    │       └── ⬅️ Назад → ADMIN_MENU
+    ├── 🎟 Массовый промокод → ADMIN_BULK_PROMO  [📝 ⌨️]
+    │       ├── Select credits ─► Select quantity ─► BULK PROMO CREATED  [📝 ⌨️]
+    │       │       ├── 🎟 Создать ещё → ADMIN_BULK_PROMO
+    │       │       └── ⬅️ Назад → ADMIN_MENU
     │       └── ⬅️ Назад → ADMIN_MENU
     └── 🏠 Выход → MAIN MENU
 

@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the cat’s facial identity or unique markings. Do not replicate the original photo’s body pose, posture, or composition. Do not cover the cat’s eyes with flowers or ribbons; keep eyes fully visible. Only transform the SOLO subject selected by largest_face; if tied, choose largest_face > sharpest_face > center_face > first detected. Blur all other subjects; no other subjects’ hands/arms/paws interacting with the main subject, only the main subject’s own body visible in the foreground. No text, no watermarks, no logos. No extra limbs, no warped ears, no unnatural fur texture.
+
+Transformation directives: Add a handwoven cottagecore flower crown sized for a cat: tiny daisies, baby’s breath, and soft ribbon that drapes behind the ears without covering eyes or whiskers. Transform the scene into a sunlit meadow picnic: lace cloth, scattered wildflowers, soft greenery, and a warm golden haze. Compose like a wholesome lifestyle photo: the cat sitting calmly on or near the picnic cloth, gentle three-quarter view, camera slightly above cat-eye level for a cozy feel. Use soft depth of field with creamy bokeh and sun flare highlights.
+
+Identity invariants: Preserve the exact facial likeness of the cat (face shape, eye shape, nose, mouth, whisker pads), fur pattern, fur color, and any distinctive marks; keep the face photographic and unchanged.
+
+Technical/realism: Photorealistic floral details and fabric weave, warm natural sunlight with soft shadows, crisp focus on the cat’s face.
+===END PROMPT===

@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the cat’s facial identity or unique markings. Do not replicate the original photo’s body pose, posture, or composition. Keep other people/animals unchanged in the background_only, but do not allow any other subject to touch or overlap the main cat; no arms/hands/paws from others entering the main subject area. Only transform the SOLO subject selected by largest_face; if tied, choose largest_face > sharpest_face > center_face > first detected. No text, no mission logos, no flags, no watermarks. No helmet fog that hides the face, no distorted whiskers, no duplicated reflections.
+
+Transformation directives: Put the selected cat in a clear bubble space helmet with subtle reflections and realistic curvature, keeping whiskers and ears visible and comfortable. Add tiny suit collar clamps or a minimal neck ring that suggests a space suit without covering the face. Transform the scene into a moon-surface photoshoot: dusty regolith ground, distant horizon, Earth visible in the sky, cool blue studio-grade lighting with gentle fill. Pose the cat as an “explorer”: standing with one front paw slightly forward as if taking a careful step, camera low and slightly wide for a heroic small-scale look. Add fine dust texture and crisp shadowing consistent with a lunar-like environment.
+
+Identity invariants: Preserve the exact facial likeness of the cat (face shape, eye shape, nose, mouth, whisker pads), fur pattern, fur color, and any distinctive marks; keep the face photographic and unchanged.
+
+Technical/realism: Photorealistic helmet optics (refraction, reflections), clean high-resolution detail on fur, believable cool lighting with controlled contrast.
+===END PROMPT===

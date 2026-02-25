@@ -104,6 +104,8 @@ Key constraints:
 - All Face Treatment modes valid
 - If MODIFY: Identity invariants section must use exact input language for features_to_change/keep
 - If HYBRID: Identity invariants must include recognizability test
+- POSE RULE: Transformation directives MUST describe a specific new body pose, body position, and camera angle/framing appropriate for the scene. Do NOT copy the pose from the input photo. Identity invariants must preserve facial identity ONLY — never include head angle, body position, posture, or original composition. The result should look like an entirely new photograph of the same person, not the original photo with a costume swap.
+- Add to Negatives: Do not replicate the original photo's body pose, posture, or composition.
 
 ---
 
@@ -144,7 +146,8 @@ PART 4: FACE HANDLING (Mode-Specific)
 Preserve the INTENT and SPECIFICITY of input features. Do not soften ("pronounced" → "heavier") or generalize ("5 specific changes" → "some changes"). You MAY rephrase for clarity when the original wording would be grammatically awkward or ambiguous as a generation instruction — but never reduce the degree or detail of modification.
 
 IF Face Treatment = PRESERVE:
-Identity invariants: Preserve exact facial features, face shape, and likeness of every person. Keep skin tone, facial proportions, identity completely unchanged. Face remains photographic. Only [background / clothing / scene composition] changes, NOT the face.
+Identity invariants: Preserve exact facial features, face shape, and likeness of every person. Keep skin tone, facial proportions, identity completely unchanged. Face remains photographic. Only [background / clothing / scene composition / body pose] changes, NOT the face.
+NOTE: Do NOT add head angle, body position, posture, expression, or pose to Identity invariants. These must be free to change so the model generates a new composition rather than cloning the input photo's layout.
 
 IF Face Treatment = MODIFY:
 Combination check: MODIFY requires COMPREHENSIVE scope. If scope is ISOLATED or STYLISTIC, this is an invalid combination — do not proceed.
@@ -291,6 +294,10 @@ FAILURE 7: Invalid Combination
 FAILURE 8: Wrong Prompt Language
 - Problem: Prompt written in Russian or mixed languages
 - Fix: All prompt text in English
+
+FAILURE 9: Pose Cloning in COMPREHENSIVE
+- Problem: Identity invariants include "head angle," "body position," "posture," or "expression" — locking the model into reproducing the input photo's pose. Result is same-pose-different-costume instead of a new image.
+- Fix: For COMPREHENSIVE scope, Identity invariants must only preserve facial identity (face shape, features, skin tone, likeness). Transformation directives must describe a specific new pose and body position for the scene. Never preserve the original pose.
 
 ---
 

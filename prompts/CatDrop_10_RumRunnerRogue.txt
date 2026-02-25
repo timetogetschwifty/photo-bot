@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the cat’s facial identity or unique markings. Do not replicate the original photo’s body pose, posture, or composition. Keep other people/animals unchanged in the background_only, but do not let any other subject touch or overlap the main cat; no arms/hands/paws from others entering the main subject area. Only transform the SOLO subject selected by largest_face; if tied, choose largest_face > sharpest_face > center_face > first detected. No real celebrity names, no specific movie character references, no brand marks, no text, no watermarks. No eye makeup that looks heavy or harms realism; keep it very subtle. No extra limbs, no hat merging into ears, no wig covering eyes.
+
+Transformation directives: Dress the selected cat as a chaotic legendary pirate captain: a weathered tricorn hat slightly crooked, a messy bead-and-charm “dreadlock-like” wig adapted for a cat, and extremely subtle smudged eyeliner for swagger (natural-looking, minimal). Add a long red sash belt, worn leather vest, and a tiny compass accessory hanging at the chest. Transform the background into a moonlit port town with ship rigging, dramatic mist, and warm lantern glow reflecting off damp wood. Pose the cat as a mischievous captain: standing on a dock crate or barrel, one paw forward like a confident step, camera at cat-eye height with a cinematic medium shot, slight tilt for adventurous energy. Add gentle sea haze and a few distant lantern bokeh points.
+
+Identity invariants: Preserve the exact facial likeness of the cat (face shape, eye shape, nose, mouth, whisker pads), fur pattern, fur color, and any distinctive marks; keep the face photographic and unchanged.
+
+Technical/realism: Photorealistic weathered fabrics and leather grain, believable moonlight plus warm lantern key/fill interplay, sharp facial detail with natural whiskers and fur texture.
+===END PROMPT===

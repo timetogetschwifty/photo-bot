@@ -33,12 +33,12 @@
 categories:
   avatar:
     enabled: true
-    order: 1
+    order: 2
     label: "📸 На аватар (drop)"
   
   iwd:
     enabled: true
-    order: 2
+    order: 3
     label: "🌹 8 марта (drop)"
 
 
@@ -50,8 +50,14 @@ categories:
 
   hairforher:
     enabled: true
-    order: 4
+    order: 5
     label: "💈 Новая прическа для нее (drop)"
+
+
+  cat_drop:
+    enabled: true
+    order: 1
+    label: "😻 Котики 🆕"
 
 # ── Effects ───────────────────────────────────────────────────────────────────
 
@@ -548,7 +554,87 @@ effects:
     category: iwd
 
 
-    
+
+  # ── Cat drop ──
+  CatDrop_01_SamuraiArmorKitty:
+    enabled: true
+    order: 1
+    label: "Самурай"
+    tips: ""
+    best_input: ""
+    category: cat_drop
+
+  CatDrop_02_CottagecoreFlowerCrown:
+    enabled: true
+    order: 2
+    label: "Цветочный венок"
+    tips: ""
+    best_input: ""
+    category: cat_drop
+
+  CatDrop_03_PharaohGoldRegalia:
+    enabled: true
+    order: 3
+    label: "Фараон"
+    tips: ""
+    best_input: ""
+    category: cat_drop
+
+  CatDrop_04_SpaceHelmetExplorer:
+    enabled: true
+    order: 4
+    label: "В космосе"
+    tips: ""
+    best_input: ""
+    category: cat_drop
+
+  CatDrop_05_PunkSpikeJacket:
+    enabled: true
+    order: 5
+    label: "Панк"
+    tips: ""
+    best_input: ""
+    category: cat_drop
+
+  CatDrop_06_RoyalRufflePortrait:
+    enabled: true
+    order: 6
+    label: "Аристократ"
+    tips: ""
+    best_input: ""
+    category: cat_drop
+
+  CatDrop_07_KawaiiPastelHoodie:
+    enabled: true
+    order: 7
+    label: "Kawaii"
+    tips: ""
+    best_input: ""
+    category: cat_drop
+
+  CatDrop_08_NoirDetectiveTrench:
+    enabled: true
+    order: 8
+    label: "Нуар"
+    tips: ""
+    best_input: ""
+    category: cat_drop
+
+  CatDrop_09_GothamNightPurr:
+    enabled: true
+    order: 9
+    label: "Готэм"
+    tips: ""
+    best_input: ""
+    category: cat_drop
+
+  CatDrop_10_RumRunnerRogue:
+    enabled: true
+    order: 10
+    label: "Пират"
+    tips: ""
+    best_input: ""
+    category: cat_drop
 
 
 # ── TEMPLATES ─────────────────────────────────────────────────────────────────

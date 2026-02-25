@@ -72,9 +72,7 @@ Avoid prompt wording that commonly triggers Gemini safety blocks.
 
 - Conversation flow, FSM, DB schema: `docs/ARCHITECTURE.md`
 - Deployment config & Railway setup: `docs/RAILWAY_CONFIG.md`
-- Deployment workflow & git commands: `docs/POST_DEPLOYMENT_WORKFLOW.md`
 - Pricing, packages, payments: `docs/PRICING.md`
-- Task planning and roadmap: `docs/ROADMAP.md`
 - Secrets and repository hygiene: `docs/SECURITY.md`
 
 ## Security Baseline

@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the cat’s facial identity or unique markings. Do not replicate the original photo’s body pose, posture, or composition. Remove all other subjects completely, including any partial faces, hands, arms, bodies, or tails from others; only the main cat remains. Only transform the SOLO subject selected by largest_face; if tied, choose largest_face > sharpest_face > center_face > first detected. No modern objects, no contemporary clothing remnants, no text, no watermarks, no logos. No painterly distortion on the face; keep the face photorealistic, no “oil paint face.”
+
+Transformation directives: Create a classic aristocratic portrait setup with a dramatic ruffled collar, a velvet cape with an ornate clasp, and subtle painted canvas texture in the clothing and background only. Keep the cat’s face photorealistic while the surroundings gain a museum-grade oil-portrait feel. Background becomes a dark, elegant museum-style backdrop with a gilded frame edge partially visible, like the portrait is inside a frame. Pose the cat as a noble sitter: upright seated posture on a small pedestal or cushion, head held high, camera straight-on at cat-eye height, with slightly tighter portrait framing. Add subtle vignette and warm, dignified tones without adding any text or plaques.
+
+Identity invariants: Preserve the exact facial likeness of the cat (face shape, eye shape, nose, mouth, whisker pads), fur pattern, fur color, and any distinctive marks; keep the face photographic and unchanged.
+
+Technical/realism: Hybrid realism where the face stays crisp and photographic while fabric, frame, and background show refined oil-paint texture; controlled studio portrait lighting with gentle falloff.
+===END PROMPT===

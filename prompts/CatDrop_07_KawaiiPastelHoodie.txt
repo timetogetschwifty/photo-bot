@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the cat’s facial identity or unique markings. Do not replicate the original photo’s body pose, posture, or composition. Blur all other subjects; no other subjects’ hands/arms/paws interacting with the main subject, only the main subject’s own body visible in the foreground. Only transform the SOLO subject selected by sharpest_face; if tied, choose largest_face > sharpest_face > center_face > first detected. No text, no brand logos, no readable stickers. No extra limbs, no hoodie covering the cat’s eyes, no unnatural plastic fur.
+
+Transformation directives: Dress the selected cat in an oversized pastel hoodie with embroidered cheek accents (cute stitched shapes, no text), tiny ear cutouts, and a cute zipper pull charm. Transform the background into a bright candy-colored room with plush textures, sticker-like decor (abstract shapes only), and soft blush lighting. Compose like a personalized “wholesome sticker” photo: the cat sitting with paws tucked or gently forward, camera slightly above cat-eye level, centered and cozy, with soft depth of field. Add a gentle glow and clean pastel color harmony that complements the cat’s fur tone.
+
+Identity invariants: Preserve the exact facial likeness of the cat (face shape, eye shape, nose, mouth, whisker pads), fur pattern, fur color, and any distinctive marks; keep the face photographic and unchanged.
+
+Technical/realism: Photorealistic fabric knit and embroidery stitching, soft studio lighting, sharp focus on face with smooth pastel background bokeh.
+===END PROMPT===

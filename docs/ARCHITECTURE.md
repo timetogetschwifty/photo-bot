@@ -11,8 +11,11 @@
        └── ℹ️ О проекте → Disclaimer + Support link
 
 /admin → Admin Panel (ADMIN_ID only)
-       ├── Статистика → User count, generations, revenue, per-effect stats, per-package breakdown
-       └── Создать промокод → Select amount (10/25/50/100) → Show generated code
+       ├── 📊 Статистика → User count, generations, revenue, per-effect stats, per-package breakdown
+       ├── 📈 Weekly Report → Key metrics for the past week
+       ├── 🗂 Raw Data → Export users/generations/purchases as Excel
+       ├── 🎁 Создать промокод → Select amount (10/25/50/100) → Show generated code
+       └── 🎟 Массовый промокод → Create bulk promo codes
 ```
 
 ## Conversation States

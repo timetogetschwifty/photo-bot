@@ -70,8 +70,6 @@ Locally, the database falls back to `Photo bot/photo_bot.db` (same directory as 
 
 Railway auto-deploys when you push to GitHub main branch.
 
-**For detailed workflow instructions, see:** [POST_DEPLOYMENT_WORKFLOW.md](POST_DEPLOYMENT_WORKFLOW.md)
-
 **Quick reference:**
 - **Code changes**: `git add` → `git commit` → `git push origin main` → auto-deploys in 2-3 min
 - **Environment variables**: Update in Railway Dashboard → Variables → Apply Changes (no git needed)
@@ -94,7 +92,7 @@ Railway auto-deploys when you push to GitHub main branch.
 
 - Will add dual payment system
 - YooMoney (Rubles) + Telegram Stars (international)
-- See ROADMAP.md for details
+- Planned for future implementation
 
 ## Current Bot Stats
 
@@ -157,7 +155,7 @@ The bot has a `/admin` command that shows:
 - Revenue statistics (total + per-package breakdown)
 - Effect popularity (generations per effect)
 
-**Note:** User segments analysis requires running SQL queries or export scripts. See [DATA_ANALYSIS.md](DATA_ANALYSIS.md) and [ANALYTICS_IMPLEMENTATION.md](ANALYTICS_IMPLEMENTATION.md)
+**Note:** User segments analysis requires running SQL queries or export scripts.
 
 ---
 

@@ -1,0 +1,9 @@
+===PROMPT===
+Negatives: Do not change the cat’s facial identity or unique markings. Do not replicate the original photo’s body pose, posture, or composition. Keep other people/animals unchanged in the background_only, but do not let any other subject touch or overlap the main cat; no arms/hands/paws from others entering the main subject area. Only transform the SOLO subject selected by largest_face; if tied, choose largest_face > sharpest_face > center_face > first detected. No real superhero names, no copyrighted symbols, no bat-shaped logos, no recognizable franchise emblems, no text or watermarks. No extra limbs, no distorted ears, no mask covering eyes completely.
+
+Transformation directives: Create a “night-city vigilante” mini suit for the selected cat: a matte-black cowl-like headpiece that frames the face while keeping the cat’s real ears visible and comfortable, a tiny flowing cape, and a compact utility belt with small treat-sized pouches. Add dramatic rooftop wind motion in the cape and a misty city skyline at night. Place a large abstract searchlight beam in the clouds behind (generic shape, not a specific symbol), adding cinematic drama and scale. Pose the cat as a rooftop guardian: standing tall on a ledge, front paws firm, chest forward, camera slightly low looking up for hero energy, with a wide cinematic framing that shows skyline depth. Add subtle rain-mist and atmospheric perspective.
+
+Identity invariants: Preserve the exact facial likeness of the cat (face shape, eye shape, nose, mouth, whisker pads), fur pattern, fur color, and any distinctive marks; keep the face photographic and unchanged.
+
+Technical/realism: Photorealistic night cinematography with rim light on the silhouette, realistic fabric motion, clean high detail on fur, and believable city lights bokeh.
+===END PROMPT===
