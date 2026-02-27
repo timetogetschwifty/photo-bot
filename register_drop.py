@@ -25,8 +25,8 @@ PROMPTS_DIR = os.path.join(BASE_DIR, "prompts")
 IMAGES_DIR = os.path.join(BASE_DIR, "images")
 
 TITLE_RE = re.compile(r"=+\s*IDEA\s+(\d+)\s*:\s*(.+?)\s*=+", re.IGNORECASE)
-MENU_DESC_RE = re.compile(r"Menu description \(RU\):\s*(.+)")
-BEST_INPUT_RE = re.compile(r"Best input \(RU\):\s*\n((?:\s*•.*\n?)+)", re.MULTILINE)
+MENU_DESC_RE = re.compile(r"Transformation description \(RU\):\s*(.+)")
+BEST_INPUT_RE = re.compile(r"Best inputs \(RU\):\s*(.+)")
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
@@ -66,18 +66,8 @@ def parse_ideas_with_tips(filepath):
         menu_match = MENU_DESC_RE.search(chunk)
         tips = normalize_quotes(menu_match.group(1).strip()) if menu_match else ""
 
-        # Extract best_input bullets
         best_input_match = BEST_INPUT_RE.search(chunk)
-        if best_input_match:
-            # Extract bullet points and join them with newline
-            bullets = best_input_match.group(1).strip()
-            # Clean up: remove bullet points and extra whitespace
-            best_input = bullets.replace("•", "").strip()
-            # Join multiple lines into one, separated by semicolons for readability
-            best_input = "; ".join(line.strip() for line in best_input.split("\n") if line.strip())
-            best_input = normalize_quotes(best_input)
-        else:
-            best_input = ""
+        best_input = normalize_quotes(best_input_match.group(1).strip()) if best_input_match else ""
 
         ideas.append((number, name, tips, best_input))
 
