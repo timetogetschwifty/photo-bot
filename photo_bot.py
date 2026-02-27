@@ -1522,6 +1522,24 @@ async def show_admin_report(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def show_admin_effects_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show format selection for raw data export."""
+    query = update.callback_query
+    await query.answer()
+
+    await query.edit_message_text(
+        "🗂 Raw Data — выбери формат:",
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("📊 XLSX", callback_data="admin_effects_report_xlsx"),
+                InlineKeyboardButton("📄 CSV (zip)", callback_data="admin_effects_report_csv"),
+            ],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+        ]),
+    )
+    return ADMIN_EFFECTS_REPORT
+
+
+async def show_admin_effects_report_xlsx(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Send raw data (users, generations, purchases) as Excel file."""
     import io
     from datetime import date
@@ -1530,44 +1548,111 @@ async def show_admin_effects_report(update: Update, context: ContextTypes.DEFAUL
 
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text("⏳ Generating raw data export...")
+    await query.edit_message_text("⏳ Generating XLSX export...")
 
     conn = db.get_connection()
-    c = conn.cursor()
+    try:
+        c = conn.cursor()
+        wb = Workbook()
 
-    wb = Workbook()
+        for table in ["users", "generations", "purchases"]:
+            c.execute(f"SELECT * FROM {table}")
+            rows = c.fetchall()
+            cols = [d[0] for d in c.description]
 
-    for table in ["users", "generations", "purchases"]:
-        c.execute(f"SELECT * FROM {table}")
-        rows = c.fetchall()
-        cols = [d[0] for d in c.description]
+            ws = wb.create_sheet(title=table.capitalize())
+            ws.append(cols)
+            for cell in ws[1]:
+                cell.font = Font(bold=True)
+            for row in rows:
+                ws.append(list(row))
 
-        ws = wb.create_sheet(title=table.capitalize())
-        ws.append(cols)
-        for cell in ws[1]:
-            cell.font = Font(bold=True)
-        for row in rows:
-            ws.append(list(row))
+        del wb["Sheet"]  # remove default empty sheet
 
-    del wb["Sheet"]  # remove default empty sheet
-    conn.close()
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
 
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
+        await context.bot.send_document(
+            chat_id=query.message.chat_id,
+            document=buf,
+            filename=f"raw_data_{date.today()}.xlsx",
+        )
 
-    await context.bot.send_document(
-        chat_id=query.message.chat_id,
-        document=buf,
-        filename=f"raw_data_{date.today()}.xlsx",
-    )
+        await query.edit_message_text(
+            "✅ XLSX sent! (Users / Generations / Purchases)",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+            ]),
+        )
+    except Exception as e:
+        await query.edit_message_text(
+            f"❌ Export failed: {e}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+            ]),
+        )
+    finally:
+        conn.close()
 
-    await query.edit_message_text(
-        "✅ Raw data sent! (Users / Generations / Purchases)",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
-        ]),
-    )
+    return ADMIN_EFFECTS_REPORT
+
+
+async def show_admin_effects_report_csv(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Send raw data (users, generations, purchases) as CSV files in a ZIP archive."""
+    import io
+    import csv
+    import zipfile
+    from datetime import date
+
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text("⏳ Generating CSV export...")
+
+    conn = db.get_connection()
+    try:
+        c = conn.cursor()
+
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            for table in ["users", "generations", "purchases"]:
+                c.execute(f"SELECT * FROM {table}")
+                rows = c.fetchall()
+                cols = [d[0] for d in c.description]
+
+                # utf-8-sig writes a BOM so Excel auto-detects encoding correctly
+                csv_buf = io.StringIO()
+                csv_buf.write("\ufeff")
+                writer = csv.writer(csv_buf)
+                writer.writerow(cols)
+                writer.writerows(rows)
+
+                zf.writestr(f"{table}.csv", csv_buf.getvalue().encode("utf-8"))
+
+        zip_buf.seek(0)
+
+        await context.bot.send_document(
+            chat_id=query.message.chat_id,
+            document=zip_buf,
+            filename=f"raw_data_{date.today()}.zip",
+        )
+
+        await query.edit_message_text(
+            "✅ CSV sent! (users.csv / generations.csv / purchases.csv)",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+            ]),
+        )
+    except Exception as e:
+        await query.edit_message_text(
+            f"❌ Export failed: {e}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ Назад", callback_data="admin_back")],
+            ]),
+        )
+    finally:
+        conn.close()
+
     return ADMIN_EFFECTS_REPORT
 
 
@@ -1739,6 +1824,8 @@ def main() -> None:
                 CallbackQueryHandler(show_admin_stats, pattern="^admin_stats$"),
                 CallbackQueryHandler(show_admin_report, pattern="^admin_report$"),
                 CallbackQueryHandler(show_admin_effects_report, pattern="^admin_effects_report$"),
+                CallbackQueryHandler(show_admin_effects_report_xlsx, pattern="^admin_effects_report_xlsx$"),
+                CallbackQueryHandler(show_admin_effects_report_csv, pattern="^admin_effects_report_csv$"),
                 CallbackQueryHandler(show_admin_promo, pattern="^admin_promo$"),
                 CallbackQueryHandler(show_admin_bulk_promo, pattern="^admin_bulk_promo$"),
                 CallbackQueryHandler(show_admin_broadcast, pattern="^admin_broadcast$"),
@@ -1753,6 +1840,8 @@ def main() -> None:
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
             ],
             ADMIN_EFFECTS_REPORT: [
+                CallbackQueryHandler(show_admin_effects_report_xlsx, pattern="^admin_effects_report_xlsx$"),
+                CallbackQueryHandler(show_admin_effects_report_csv, pattern="^admin_effects_report_csv$"),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
             ],
             ADMIN_PROMO: [
