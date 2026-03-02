@@ -107,6 +107,8 @@ def load_yaml_config() -> tuple[dict, dict]:
                 if os.path.exists(prompt_path):
                     with open(prompt_path, "r", encoding="utf-8") as f:
                         effect["prompt"] = f.read().strip()
+                elif effect.get("type") == "free_prompt":
+                    effect["prompt"] = ""   # user supplies prompt at runtime
                 else:
                     logger.error(f"Prompt file not found, skipping effect: {prompt_path}")
                     continue
@@ -173,7 +175,8 @@ PROMO_AMOUNTS = [10, 25, 50, 100]
     ADMIN_REPORT,
     ADMIN_EFFECTS_REPORT,
     ADMIN_BROADCAST,
-) = range(15)
+    WAITING_LUCKY_PROMPT,
+) = range(16)
 
 # ── Gemini client ────────────────────────────────────────────────────────────
 
@@ -419,6 +422,7 @@ async def send_main_menu(bot, chat_id, text, reply_markup):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle /start command. Check for referral link or deep link."""
+    context.user_data.pop("lucky_photo", None)
     user = update.effective_user
     args = context.args
 
@@ -479,6 +483,7 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     """Show main menu (from callback) using reply keyboard mode."""
     query = update.callback_query
     await query.answer()
+    context.user_data.pop("lucky_photo", None)
 
     user = update.effective_user
     db_user = db.get_user(user.id)
@@ -530,6 +535,7 @@ async def back_to_browse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     """Return to previous browse category."""
     query = update.callback_query
     await query.answer()
+    context.user_data.pop("lucky_photo", None)
 
     user = update.effective_user
     db_user = db.get_user(user.id)
@@ -588,6 +594,7 @@ async def handle_reply_create(update: Update, context: ContextTypes.DEFAULT_TYPE
     # Clear stale anchor so render_create_screen sends a fresh message
     context.user_data.pop("create_ui_message_id", None)
     context.user_data.pop("create_ui_is_photo", None)
+    context.user_data.pop("lucky_photo", None)
 
     title, keyboard = build_browse_keyboard(None, credits)
     await render_create_screen(context, update.effective_chat.id, title, keyboard, LOGO_PATH)
@@ -596,6 +603,7 @@ async def handle_reply_create(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def handle_reply_store(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle '💳 Пополнить запасы' from reply keyboard."""
+    context.user_data.pop("lucky_photo", None)
     buttons = [
         [InlineKeyboardButton(pkg["label"], callback_data=f"buy_{key}")]
         for key, pkg in PACKAGES.items()
@@ -607,6 +615,7 @@ async def handle_reply_store(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def handle_reply_promo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle '🎁 Промокод' from reply keyboard."""
+    context.user_data.pop("lucky_photo", None)
     await update.message.reply_text(
         "Введи промокод:",
         reply_markup=InlineKeyboardMarkup([
@@ -618,6 +627,7 @@ async def handle_reply_promo(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def handle_reply_referral(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle '👥 Пригласить друга' from reply keyboard."""
+    context.user_data.pop("lucky_photo", None)
     user = update.effective_user
     ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
     await update.message.reply_text(
@@ -636,6 +646,7 @@ async def show_browse_root(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     """Show top-level browse screen (from inline menu)."""
     query = update.callback_query
     await query.answer()
+    context.user_data.pop("lucky_photo", None)
     user = update.effective_user
     db_user = db.get_user(user.id)
     credits = db_user["credits"] if db_user else 0
@@ -655,6 +666,7 @@ async def browse_category(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     """Navigate into a category/subcategory — generic handler for any depth."""
     query = update.callback_query
     await query.answer()
+    context.user_data.pop("lucky_photo", None)
     user = update.effective_user
     db_user = db.get_user(user.id)
     credits = db_user["credits"] if db_user else 0
@@ -685,6 +697,7 @@ async def select_effect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     """User selected an effect. Check credits and show description."""
     query = update.callback_query
     await query.answer()
+    context.user_data.pop("lucky_photo", None)
 
     effect_id = query.data.replace("effect_", "")
     if effect_id not in TRANSFORMATIONS:
@@ -793,6 +806,44 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     photo_bytes = await photo_file.download_as_bytearray()
 
     effect = TRANSFORMATIONS[effect_id]
+
+    # free_prompt branch: store photo, ask for user's text prompt (before spinner + try/finally)
+    if effect.get("type") == "free_prompt":
+        db.refund_credit(user.id)  # charge later, when user actually submits their text
+        try:
+            buf = io.BytesIO()
+            Image.open(io.BytesIO(bytes(photo_bytes))).save(buf, format="PNG")
+            context.user_data["lucky_photo"] = buf.getvalue()
+        except Exception as e:
+            logger.error("Failed to process photo for free_prompt: %s", e)
+            # Credit already refunded above — do NOT call add_credits again
+            await update.message.reply_text("❌ Не удалось обработать фото. Попробуй ещё раз.")
+            return WAITING_PHOTO
+
+        previous_category = context.user_data.get("previous_category")
+        back_callback = f"cat_{previous_category}" if previous_category else "browse_root"
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
+        ])
+        # Delete the old effect-selection anchor so its buttons can't be tapped,
+        # then reply to the photo (puts prompt request below it) and adopt as new anchor.
+        old_anchor_id = context.user_data.pop("create_ui_message_id", None)
+        context.user_data.pop("create_ui_is_photo", None)
+        if old_anchor_id:
+            try:
+                await context.bot.delete_message(
+                    chat_id=update.effective_chat.id, message_id=old_anchor_id
+                )
+            except Exception:
+                pass
+        msg = await update.message.reply_text(
+            "✅ Фото получено!\n\nТеперь напиши свой PROMPT 👇",
+            reply_markup=keyboard,
+        )
+        context.user_data["create_ui_message_id"] = msg.message_id
+        context.user_data["create_ui_is_photo"] = False
+        return WAITING_LUCKY_PROMPT
+
     status_msg = await update.message.reply_text("⏳ Создаю магию...")
 
     try:
@@ -864,7 +915,15 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             await notif.send_credits_low_warning(user.id)
 
 
-        # Send result
+        # Send result with navigation buttons
+        previous_category = context.user_data.get("previous_category")
+        context.user_data["current_category"] = previous_category
+        back_callback = f"cat_{previous_category}" if previous_category else "browse_root"
+        result_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔄 Попробовать снова", callback_data=f"effect_{effect_id}")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
+        ])
+
         output_buffer = io.BytesIO()
         result_image.save(output_buffer, format="PNG")
         output_buffer.seek(0)
@@ -873,15 +932,17 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         await update.message.reply_photo(
             photo=output_buffer,
             caption=f"✅ {effect['label']}\n⚡ Осталось зарядов: {remaining}",
+            reply_markup=result_keyboard,
         )
 
-        # Update anchor to browse screen (no separate nav message)
-        previous_category = context.user_data.get("previous_category")
-        context.user_data["current_category"] = previous_category
-        title, keyboard = build_browse_keyboard(previous_category, remaining)
-        cat_image = CATEGORIES.get(previous_category or "", {}).get("image") if previous_category else None
-        nav_image = (cat_image if cat_image and os.path.exists(cat_image) else None) or LOGO_PATH
-        await render_create_screen(context, update.effective_chat.id, title, keyboard, nav_image)
+        # Delete old anchor (replaced by result photo buttons)
+        old_anchor_id = context.user_data.pop("create_ui_message_id", None)
+        context.user_data.pop("create_ui_is_photo", None)
+        if old_anchor_id:
+            try:
+                await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=old_anchor_id)
+            except Exception:
+                pass
 
     except Exception as e:
         logger.error("Error during transformation: %s", e, exc_info=True)
@@ -915,12 +976,163 @@ async def photo_expected(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     back_callback = f"cat_{previous_category}" if previous_category else "browse_root"
 
     await update.message.reply_text(
-        "Пожалуйста, отправь фото.",
+        "📸 Сначала фото — потом магия!",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
         ]),
     )
     return WAITING_PHOTO
+
+
+async def handle_lucky_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Receive user's text prompt and apply it to the stored photo."""
+    effect_id = context.user_data.get("effect_id")
+    photo_bytes = context.user_data.get("lucky_photo")
+
+    if not effect_id or not photo_bytes or effect_id not in TRANSFORMATIONS:
+        await update.message.reply_text(
+            "❌ Сессия истекла\n\nНажми кнопку ниже, чтобы начать заново:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Начать заново", callback_data="restart")],
+            ]),
+        )
+        return MAIN_MENU
+
+    user = update.effective_user
+    user_text = update.message.text.strip()
+
+    if not user_text:
+        await update.message.reply_text("✏️ Пустой запрос не считается 🙈 Напиши что-нибудь!")
+        return WAITING_LUCKY_PROMPT
+
+    if not db.deduct_credit(user.id):
+        context.user_data.pop("lucky_photo", None)
+        context.user_data.pop("effect_id", None)
+        message = (
+            "😮‍💨 Заряды кончились. Бывает.\n\n"
+            "Но останавливаться необязательно:\n\n"
+            "💳 Пополнить → от 99 ₽\n"
+            "👥 Позвать друга → +3 заряда бесплатно"
+        )
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("💳 Пополнить", callback_data="menu_store")],
+            [InlineKeyboardButton("👥 Позвать друга", callback_data="menu_referral")],
+            [InlineKeyboardButton("⬅️ Главное меню", callback_data="back_to_main")],
+        ])
+        await update.message.reply_text(message, reply_markup=keyboard, parse_mode="HTML")
+        return MAIN_MENU
+
+    effect = TRANSFORMATIONS[effect_id]
+    status_msg = await update.message.reply_text("⏳ Создаю магию...")
+
+    try:
+        input_image = Image.open(io.BytesIO(photo_bytes))
+
+        logger.info(f"Calling Gemini model (free_prompt): {GEMINI_MODEL}")
+        response = gemini_client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=[user_text, input_image],
+            config=types.GenerateContentConfig(
+                response_modalities=["Text", "Image"],
+            ),
+        )
+
+        result_image = None
+        result_text = None
+        for part in response.parts:
+            if part.inline_data is not None:
+                result_image = Image.open(io.BytesIO(part.inline_data.data))
+            elif part.text is not None:
+                result_text = part.text
+
+        if result_image is None:
+            db.record_generation(user.id, effect_id, status="failed")
+            new_balance = db.refund_credit(user.id)
+            previous_category = context.user_data.get("previous_category")
+            back_callback = f"cat_{previous_category}" if previous_category else "browse_root"
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Попробовать снова", callback_data=f"effect_{effect_id}")],
+                [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
+            ])
+            await status_msg.edit_text(
+                f"❌ Что-то пошло не так\n\nКредит возвращён.\n⚡ Доступно зарядов: {new_balance}",
+                reply_markup=keyboard,
+            )
+            return BROWSING
+
+        db.record_generation(user.id, effect_id)
+        db.update_last_active(user.id)
+        referrer_id = db.credit_referral_on_generation(user.id)
+        if referrer_id:
+            db.add_credits(referrer_id, 3)
+            logger.info(f"Credited referrer {referrer_id} with 3 credits (generation) for user {user.id}")
+
+        db_user = db.get_user(user.id)
+        remaining = db_user["credits"] if db_user else 0
+        if remaining == 1:
+            await notif.send_credits_low_warning(user.id)
+
+        output_buffer = io.BytesIO()
+        result_image.save(output_buffer, format="PNG")
+        output_buffer.seek(0)
+
+        result_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔄 Попробовать снова", callback_data=f"effect_{effect_id}")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="browse_root")],
+        ])
+
+        await status_msg.delete()
+        await update.message.reply_photo(
+            photo=output_buffer,
+            caption=f"✅ {effect['label']}\n⚡ Осталось зарядов: {remaining}",
+            reply_markup=result_keyboard,
+        )
+
+        # Delete old anchor (replaced by result photo buttons)
+        old_anchor_id = context.user_data.pop("create_ui_message_id", None)
+        context.user_data.pop("create_ui_is_photo", None)
+        if old_anchor_id:
+            try:
+                await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=old_anchor_id)
+            except Exception:
+                pass
+
+    except Exception as e:
+        logger.error("Error during free_prompt generation: %s", e, exc_info=True)
+        db.record_generation(user.id, effect_id, status="failed")
+        new_balance = db.refund_credit(user.id)
+        previous_category = context.user_data.get("previous_category")
+        back_callback = f"cat_{previous_category}" if previous_category else "browse_root"
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔄 Попробовать снова", callback_data=f"effect_{effect_id}")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
+        ])
+        await status_msg.edit_text(
+            f"❌ Что-то пошло не так\n\nКредит возвращён.\n⚡ Доступно зарядов: {new_balance}\n\nОшибка: {str(e)[:100]}",
+            reply_markup=keyboard,
+        )
+        return BROWSING
+    finally:
+        context.user_data.pop("effect_id", None)
+        context.user_data.pop("lucky_photo", None)
+
+    return BROWSING
+
+
+async def lucky_prompt_expected(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle non-text message when prompt text is expected."""
+    previous_category = context.user_data.get("previous_category")
+    back_callback = f"cat_{previous_category}" if previous_category else "browse_root"
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⬅️ Назад", callback_data=back_callback)],
+    ])
+    await render_create_screen(
+        context,
+        update.effective_chat.id,
+        "Мне нужен текст, а не это 😄 Напиши словами что сделать с фото",
+        keyboard,
+    )
+    return WAITING_LUCKY_PROMPT
 
 
 # ── Store Flow ───────────────────────────────────────────────────────────────
@@ -1241,6 +1453,7 @@ async def show_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def show_about_from_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Show about/disclaimer info (from reply keyboard text)."""
+    context.user_data.pop("lucky_photo", None)
     text = (
         "ℹ️ О проекте\n\n"
         "Проект предназначен для людей достигших возраста 18+ "
@@ -1268,6 +1481,7 @@ async def show_about_from_text(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle /admin command."""
+    context.user_data.pop("lucky_photo", None)
     user = update.effective_user
 
     logger.info(f"Admin attempt: user.id={user.id}, ADMIN_ID={ADMIN_ID}")
@@ -1809,6 +2023,16 @@ def main() -> None:
             PROMO_INPUT: reply_kb + [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_promo_code),
                 CallbackQueryHandler(restart_bot, pattern="^restart$"),
+                CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
+            ],
+            WAITING_LUCKY_PROMPT: reply_kb + [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_lucky_prompt),
+                MessageHandler(~filters.TEXT & ~filters.COMMAND, lucky_prompt_expected),
+                CallbackQueryHandler(restart_bot, pattern="^restart$"),
+                CallbackQueryHandler(back_to_browse, pattern="^back_to_browse$"),
+                CallbackQueryHandler(show_browse_root, pattern="^browse_root$"),
+                CallbackQueryHandler(browse_category, pattern="^cat_"),
+                CallbackQueryHandler(select_effect, pattern="^effect_"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
             REFERRAL: [
