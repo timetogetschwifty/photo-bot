@@ -1,755 +1,441 @@
-# Photo Bot Effects Configuration
-# ═══════════════════════════════════════════════════════════════════════════════
-#
-# CATEGORIES:
-#   enabled  - true/false to show/hide
-#   order    - display order (lower = first)
-#   label    - button text with emoji
-#   parent   - parent category id (for subcategories)
-#
-# EFFECTS:
-#   enabled     - true/false to show/hide (keeps data for analytics)
-#   order       - display order within category (lower = first)
-#   label       - button text with emoji
-#   tips        - photo recommendations (optional)
-#   best_input  - ideal photo type for this effect (optional)
-#   category    - category id (omit for top-level effects)
-#
-# Auto-resolved files (by effect_id):
-#   prompts/{effect_id}.txt  — prompt text
-#   images/{effect_id}.jpg   — example image
-#
-# To disable: set enabled: false (don't delete - keeps stats history)
-# To reorder: change order values (sorted ascending)
-#
-# HIERARCHY EXAMPLES:
-#   No category  → shows on "Create" screen (level 0)
-#   category: X  → shows under category X (level 1)
-#   parent: X    → makes a category a subcategory of X (level 2)
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# ── Categories ────────────────────────────────────────────────────────────────
-
 categories:
   avatar:
     enabled: true
     order: 4
-    label: "📸 DROP - На аватар"
-  
+    label: 📸 DROP - На аватар
   iwd:
     enabled: true
     order: 3
-    label: "🌹 DROP - 8 марта"
-
-
-  hairforhim:
-    enabled: false
-    order: 3
-    label: "💈 Новая прическа для него (DROP)"
-
-
-  hairforher:
-    enabled: false
-    order: 5
-    label: "💈 Новая прическа для нее (DROP)"
-
-
+    label: 🌹 DROP - 8 марта
   cats:
     enabled: true
     order: 2
-    label: "😻 DROP - Котики 🔥"
-
-
+    label: 😻 DROP - Котики 🔥
   luxurydrop:
     enabled: true
     order: 1
-    label: "🤑 DROP - Luxury энергия 🔥"
-
-# ── Effects ───────────────────────────────────────────────────────────────────
-
+    label: 🤑 DROP - Luxury энергия 🔥
 effects:
+  lucky:
+    enabled: true
+    order: 0
+    label: 🎲 Попробуй свой PROMPT 🔥
+    tips: "Отправь своё фото и опиши что хочешь с ним сделать — AI исполнит."
+    best_input: ""
+    category: null
+    type: free_prompt
   Custom0218_03_ActionFigureBlister:
     enabled: true
     order: 1
-    label: "🪆 Экшн-фигурка в упаковке 🔥"
-    tips: "Вы в блистерной упаковке как экшен-фигурка: \"starter pack\" и аксессуары (кружка, ноутбук, наушники и т.д.)."
-    best_input: ""
-    category:
-
+    label: 🪆 Экшн-фигурка в упаковке 🔥
+    tips: 'Вы в блистерной упаковке как экшен-фигурка: "starter pack" и аксессуары
+      (кружка, ноутбук, наушники и т.д.).'
+    best_input: ''
+    category: null
   Custom0218_04_BabkaCat:
     enabled: true
     order: 2
-    label: "😺 Бабушка кот 🔥"
-    tips: "Покажи это своему коту, а лучше кошке"
-    best_input: ""
-    category:
-
+    label: 😺 Бабушка кот 🔥
+    tips: Покажи это своему коту, а лучше кошке
+    best_input: ''
+    category: null
   cat_phone:
     enabled: true
     order: 3
-    label: "🐱 Котик вместо телефона"
-    tips: "Преврати телефон в руке в милого котика"
-    best_input: "Photo holding a phone in your hand"
-    category: 
-
+    label: 🐱 Котик вместо телефона
+    tips: Преврати телефон в руке в милого котика
+    best_input: Photo holding a phone in your hand
+    category: null
   king:
     enabled: true
     order: 4
-    label: "👑 Ваше Величество"
-    tips: ""
-    best_input: ""
-    category: 
-  
+    label: 👑 Ваше Величество
+    tips: ''
+    best_input: ''
+    category: null
   ny_hobo:
     enabled: true
     order: 5
-    label: "🗽 Переехал в Нью Йорк"
-    tips: |
-      И что-то пошло не так
-    best_input: ""
-    category: 
-  
+    label: 🗽 Переехал в Нью Йорк
+    tips: 'И что-то пошло не так
+
+      '
+    best_input: ''
+    category: null
   fashion_week:
     enabled: true
     order: 6
-    label: "🗼 Неделя моды"
-    tips: |
-      Для нее
-    best_input: ""
-    category: 
+    label: 🗼 Неделя моды
+    tips: 'Для нее
 
+      '
+    best_input: ''
+    category: null
   proposal:
     enabled: true
     order: 7
-    label: "💍 В париже"
-    tips: |
-      Для нее
-    best_input: ""
-    category: 
+    label: 💍 В париже
+    tips: 'Для нее
 
+      '
+    best_input: ''
+    category: null
   premier:
     enabled: true
     order: 8
-    label: "📸 Заскочили на премьеру"
-    tips: |
-      Для нее и для него
-    best_input: ""
-    category: 
+    label: 📸 Заскочили на премьеру
+    tips: 'Для нее и для него
 
+      '
+    best_input: ''
+    category: null
   director:
     enabled: true
     order: 9
-    label: "🎬 Камера, мотор...!"
-    tips: |
-      9-й сезон 2137 серия
-    best_input: ""
-    category: 
+    label: 🎬 Камера, мотор...!
+    tips: '9-й сезон 2137 серия
 
-  23_poster:
-    enabled: false
-    order: 10
-    label: "💪 23 Февраля - плакат 🆕"
-    tips: "Преврати фото в винтажную советскую открытку-плакат к 23 февраля."
-    best_input: "Чёткое селфи или групповое фото в котором лица видны и хоршо освещены"
-    category:
-
-  # ── Custom0218 ──
-  Custom0218_01_LubokFairPoster:
-    enabled: false
-    order: 11
-    label: "🎨 Масленица афиша 🆕"
-    tips: "Превращает селфи в яркую масленичную лубочную афишу с орнаментальной рамкой, самоваром и блинами, оставляя лицо узнаваемым."
-    best_input: "Чёткое селфи по пояс или по плечи, лицо крупно и хорошо освещено.; Нейтральный фон или улица; одно лицо в кадре — идеально.; Фото без сильных фильтров, без \"рыбьего глаза\", без сильного размытия."
-    category:
-
-  Custom0218_02_LubokPancakePrint:
-    enabled: false
-    order: 12
-    label: "🖼️ Масленница открытка 🆕"
-    tips: "Сделайте лубочную народную открытку: плоские цвета, толстый контур, орнаменты и панель с подписью."
-    best_input: "Чёткое селфи по пояс или по плечи, лицо крупно и хорошо освещено."
-    category:
-
-  cosmo:
-    enabled: false
-    order: 13
-    label: "🚀 Выше только звезды"
-    tips: |
-      Хьюстон, у нас нет проблем
-    best_input: ""
-    category: 
-
-  love_is:
-    enabled: false
-    order: 14
-    label: "💌 Открытка в стиле Love is"
-    tips: |
-      Открытка для двоих в стиле легендарной жевачки
-    best_input: ""
-    category:
-
-  afro:
-    enabled: false
-    order: 15
-    label: "🪮 Афро"
-    tips: |
-      Размер имеет значение
-    best_input: ""
-    category: 
-
-  mullet:
-    enabled: false
-    order: 16
-    label: "💈 Маллет и усы"
-    tips: |
-      Будь в тренде
-    best_input: ""
-    category: 
-
-  carpet:
-    enabled: false
-    order: 17
-    label: "📸 Вызвали на ковер"
-    tips: ""
-    best_input: ""
-    category: 
-
-  ancestor:
-    enabled: false
-    order: 18
-    label: "🙈 Дальний родственник"
-    tips: |
-      Расскажи как тебе неудобно
-    best_input: ""
-    category: 
-
-  yelling:
-    enabled: false
-    order: 19
-    label: "🐸  Только спокойствие"
-    tips: |
-      Для нее
-    best_input: ""
-    category: 
-
-
-  # ── Avatar Drop ──
+      '
+    best_input: ''
+    category: null
   AvatarDrop_01_LinkedinHeadshot:
     enabled: true
     order: 1
-    label: "Для LinkedIn"
-    tips: "Превращает селфи в строгий корпоративный хедшот на нейтральном студийном фоне."
-    best_input: "Portrait photo with neutral expression, shoulders visible"
+    label: Для LinkedIn
+    tips: Превращает селфи в строгий корпоративный хедшот на нейтральном студийном
+      фоне.
+    best_input: Portrait photo with neutral expression, shoulders visible
     category: avatar
-
   AvatarDrop_02_TinderGlowUp:
     enabled: true
     order: 2
-    label: "На все случаи"
-    tips: 'Делает тёплый "golden hour" портрет с лёгким боке и более живыми цветами, без потери реализма.'
-    best_input: ""
+    label: На все случаи
+    tips: Делает тёплый "golden hour" портрет с лёгким боке и более живыми цветами,
+      без потери реализма.
+    best_input: ''
     category: avatar
-
   AvatarDrop_03_TelegramPfpClean:
     enabled: true
     order: 3
-    label: "Для Telegram"
-    tips: 'Делает "чистый" круглый аватар: правильный кроп, центрирование лица и читаемость в маленьком размере.'
-    best_input: ""
+    label: Для Telegram
+    tips: 'Делает "чистый" круглый аватар: правильный кроп, центрирование лица и читаемость
+      в маленьком размере.'
+    best_input: ''
     category: avatar
-
   AvatarDrop_04_InstagramStoryPortrait:
     enabled: true
     order: 4
-    label: "Для Stories"
-    tips: 'Делает "редакционный" портрет под сторис 9:16 с киношным цветом и аккуратной виньеткой.'
-    best_input: ""
+    label: Для Stories
+    tips: Делает "редакционный" портрет под сторис 9:16 с киношным цветом и аккуратной
+      виньеткой.
+    best_input: ''
     category: avatar
-
   AvatarDrop_05_WhatsappFriendly:
     enabled: true
     order: 5
-    label: "Для WhatsApp"
-    tips: "Делает светлый и дружелюбный портрет для WhatsApp: натуральная кожа и простой фон."
-    best_input: ""
+    label: Для WhatsApp
+    tips: 'Делает светлый и дружелюбный портрет для WhatsApp: натуральная кожа и простой
+      фон.'
+    best_input: ''
     category: avatar
-
   AvatarDrop_06_DiscordGamerIcon:
     enabled: true
     order: 6
-    label: "Для Discord"
-    tips: 'Делает яркую "геймерскую" аватарку: неоновый контровой свет и градиентный фон, лицо без изменений.'
-    best_input: ""
+    label: Для Discord
+    tips: 'Делает яркую "геймерскую" аватарку: неоновый контровой свет и градиентный
+      фон, лицо без изменений.'
+    best_input: ''
     category: avatar
-
   AvatarDrop_07_CvPassportStyle:
     enabled: true
     order: 7
-    label: "Для Резюме"
-    tips: 'Делает официальное фото в стиле "на резюме/анкеты": ровный свет, светлый фон, правильный кадр.'
-    best_input: ""
+    label: Для Резюме
+    tips: 'Делает официальное фото в стиле "на резюме/анкеты": ровный свет, светлый
+      фон, правильный кадр.'
+    best_input: ''
     category: avatar
-
   AvatarDrop_08_AppleContactPoster:
     enabled: true
     order: 8
-    label: "На заставку телефона"
-    tips: "Делает портрет в стиле iOS Contact Poster: мягкий фон, аккуратное боке и лицо в центре."
-    best_input: ""
+    label: На заставку телефона
+    tips: 'Делает портрет в стиле iOS Contact Poster: мягкий фон, аккуратное боке
+      и лицо в центре.'
+    best_input: ''
     category: avatar
-
   AvatarDrop_09_BusinessCardPortrait:
     enabled: true
     order: 9
-    label: "Для визитки"
-    tips: 'Портрет "для визитки": строгий фон, спокойный цвет/монохром и место под будущий текст.'
-    best_input: ""
+    label: Для визитки
+    tips: 'Портрет "для визитки": строгий фон, спокойный цвет/монохром и место под
+      будущий текст.'
+    best_input: ''
     category: avatar
-
   AvatarDrop_10_MassagerBrandPfp:
     enabled: true
     order: 10
-    label: "В стиле фото из СПА"
-    tips: 'Делает аватар "wellness-профи": мягкий свет, спокойный спа-фон и аккуратный образ без откровенности.'
-    best_input: ""
+    label: В стиле фото из СПА
+    tips: 'Делает аватар "wellness-профи": мягкий свет, спокойный спа-фон и аккуратный
+      образ без откровенности.'
+    best_input: ''
     category: avatar
-
-  # ── Hairforhim drop ──
-  HairforhimDrop_01_PlatinumBuzzCut:
-    enabled: true
-    order: 1
-    label: "Платиновый ультракороткий buzz cut"
-    tips: "Платиновый ультракороткий buzz cut с естественной тенью у корней, без изменений лица."
-    best_input: ""
-    category: hairforhim
-
-  HairforhimDrop_02_ModernSoftMullet:
-    enabled: true
-    order: 2
-    label: "Современный мягкий mullet"
-    tips: "Современный мягкий mullet: короткие бока, текстура и длина сзади, лицо без изменений."
-    best_input: ""
-    category: hairforhim
-
-  HairforhimDrop_03_KPopCurtain:
-    enabled: true
-    order: 3
-    label: "K-Pop пробор"
-    tips: "K-pop curtain layers: пробор по центру, мягкая чёлка и слои у лица, лицо неизменно."
-    best_input: ""
-    category: hairforhim
-
-  HairforhimDrop_04_TightPermCurls:
-    enabled: true
-    order: 4
-    label: "Плотные современные кудри-перм"
-    tips: "Плотные современные кудри-перм с реалистичной тенью и упругостью, без изменений лица."
-    best_input: ""
-    category: hairforhim
-
-  HairforhimDrop_05_SlickBackUndercut:
-    enabled: true
-    order: 5
-    label: "Слик-бэк андеркат"
-    tips: "Slick back undercut: короткие бока и зачёс назад с лёгким блеском, лицо без изменений."
-    best_input: ""
-    category: hairforhim
-
-  HairforhimDrop_06_TwoToneSplit:
-    enabled: true
-    order: 6
-    label: "Чёткое split-dye"
-    tips: "Чёткое split-dye: половина чёрная, половина серебряная, лицо и брови без изменений."
-    best_input: ""
-    category: hairforhim
-
-  HairforhimDrop_07_NeonTipsSpikes:
-    enabled: true
-    order: 7
-    label: "Короткие шипы с яркими неоновыми кончиками"
-    tips: "Короткие шипы с яркими неоновыми кончиками, база остаётся натуральной, лицо без изменений."
-    best_input: ""
-    category: hairforhim
-
-  HairforhimDrop_08_LongHairMan:
-    enabled: true
-    order: 8
-    label: "Длинные волосы до плеч"
-    tips: "Длинные волосы до плеч и небрежный man bun с выбившимися прядями, лицо без изменений."
-    best_input: ""
-    category: hairforhim
-
-  HairforhimDrop_09_SkinFadeCrop:
-    enabled: true
-    order: 9
-    label: "Чистый skin fade"
-    tips: "Чистый skin fade по бокам и короткий текстурный crop сверху, лицо без изменений."
-    best_input: ""
-    category: hairforhim
-
-  HairforhimDrop_10_SilverFoxDye:
-    enabled: true
-    order: 10
-    label: "Silver Fox Dye"
-    tips: "Silver fox: холодный серебристо-серый с глубиной и низкими оттенками, лицо неизменно."
-    best_input: ""
-    category: hairforhim
-
-
-  # ── HairforHER drop ──
-  HairforherDrop_01_SabrinaBangsBob:
-    enabled: true
-    order: 1
-    label: "Боб “Сабрина”"
-    tips: "Гладкий округлый боб до линии челюсти–подбородка с плотной прямой чёлкой “Сабрина” до бровей, лицо полностью сохраняется."
-    best_input: "Чёткое фото лица по центру (селфи или портрет), лоб и брови полностью видны, волосы не закрывают глаза.; Хорошее освещение спереди/сбоку, без сильных пересветов и без жёсткой тени на чёлке.; Кадр до плеч или грудь-голова: так длина боба (челюсть–подбородок) определяется точнее."
-    category: hairforher
-
-  HairforherDrop_02_CloudCutLayers:
-    enabled: true
-    order: 2
-    label: "Воздушные “облачные” слои"
-    tips: "Воздушные “облачные” слои: мягкий объём и движение у скул и линии челюсти без тяжести."
-    best_input: "Фото по плечи или по грудь, где видно длину волос и контур у скул/челюсти; Лёгкий поворот головы допустим, но лицо должно быть в центре кадра; Хорошо работает на фото, где волосы не полностью убраны назад"
-    category: hairforher
-
-  HairforherDrop_03_BixieMicroFringe:
-    enabled: true
-    order: 3
-    label: "Бикси с микрочёлкой"
-    tips: "Бикси с микрочёлкой: коротко, дерзко и редакционно — заметная смена образа с первого взгляда."
-    best_input: "Портрет с открытым лбом или хотя бы видимой линией роста волос (для микрочёлки); Лицо в центре кадра, хорошая резкость на глазах и бровях; Лучше без сильного ветра, чтобы контуры волос читались"
-    category: hairforher
-
-  HairforherDrop_04_ButterflyCurtainBangs:
-    enabled: true
-    order: 4
-    label: "“Бабочка” с занавесной чёлкой"
-    tips: "“Бабочка” с занавесной чёлкой: мягкое обрамление и объёмный флип у скул для нежного glow-up."
-    best_input: "Фото, где видно зону у скул и часть длины волос (хотя бы до плеч); Центральное лицо, нормальная резкость на волосах у висков/лоба; Подходит даже для “естественного” света и обычных селфи"
-    category: hairforher
-
-  HairforherDrop_05_JellyfishCutContrast:
-    enabled: true
-    order: 5
-    label: "Контрастный “медуза-кат”"
-    tips: "Контрастный “медуза-кат”: короткая округлая верхушка и длинные пряди снизу — силуэт, который сразу считывается."
-    best_input: "Портрет по плечи/грудь, где видно и верхнюю форму, и нижнюю длину; Лучше, если волосы не полностью сливаются с тёмным фоном (контраст помогает); Подходит для прямых и слегка волнистых волос (структура слоёв читается)"
-    category: hairforher
-
-  HairforherDrop_06_SoftShagRedux:
-    enabled: true
-    order: 6
-    label: "Мягкий современный шэг"
-    tips: "Мягкий современный шэг: перьевые слои, текстурные концы и живой объём у макушки без хаоса."
-    best_input: "Фото, где видно верх головы и виски (важно для объёма у макушки); Хорошо работает на средней длине и на длинных волосах; Резкость по лицу и волосам возле ушей/висков"
-    category: hairforher
-
-  HairforherDrop_07_FrenchGirlCrop:
-    enabled: true
-    order: 7
-    label: "Французский кроп"
-    tips: "Французский кроп: коротко, мягко и небрежно-шик — лёгкая чёлка по бровям и характер без лишнего ухода."
-    best_input: "Портрет по плечи или ближе, где хорошо видна линия чёлки и лоб; Мягкий свет, чтобы детализация волос на чёлке читалась; Подходит для селфи и фото “как есть” без студии"
-    category: hairforher
-
-  HairforherDrop_08_SculptedWolfCut:
-    enabled: true
-    order: 8
-    label: "Скульптурный wolf cut"
-    tips: "Скульптурный wolf cut: чёткий объём у макушки, сужающиеся слои и текстурные концы — структурно и очень “трендово”."
-    best_input: "Фото, где видно макушку и длину хотя бы до шеи/плеч; Резкость важна: слои должны быть читаемыми; Хорошо работает на прямых и волнистых волосах"
-    category: hairforher
-
-  HairforherDrop_09_BluntLobGlassy:
-    enabled: true
-    order: 9
-    label: "Глянцевый blunt lob"
-    tips: "Глянцевый blunt lob до ключиц: идеально ровный срез и “glass” блеск — минимализм и полированный вид."
-    best_input: "Фото по плечи/грудь, где линия до ключиц видна (важно для длины лоба); Прямые или слегка волнистые волосы дают самый “гладкий” эффект; Хорошая резкость по контуру волос на плечах"
-    category: hairforher
-
-  HairforherDrop_10_UShapeSupermodel:
-    enabled: true
-    order: 10
-    label: "U-контур и длинные “супермодельные” слои"
-    tips: "Сохраняет длину, делает чёткий U-контур и длинные “супермодельные” слои от скул до ключиц для объёма и блоуаута."
-    best_input: "Фото по грудь/плечи, чтобы видно было длину волос и кончики (так U-форма и слои получаются точнее).; Лицо по центру, хорошая резкость, волосы распущены или хотя бы виден контур длины.; Ровное освещение без сильного шума: слоистость и “блоуаут” читаются лучше."
-    category: hairforher
-
-
-  # ── IWD Drop ──
   IwdDrop_01_IwdFloralCrown:
     enabled: true
     order: 1
-    label: "Венок из цветков"
-    tips: "Весенняя улица, венок из тюльпанов и мимозы, лепестки в воздухе, лента с надписью «8 March»."
-    best_input: "Один человек по центру или крупным планом, лицо чёткое, без сильного размытия.; Подойдут селфи/портреты на улице и в помещении (с нормальным светом)."
+    label: Венок из цветков
+    tips: Весенняя улица, венок из тюльпанов и мимозы, лепестки в воздухе, лента с
+      надписью «8 March».
+    best_input: Один человек по центру или крупным планом, лицо чёткое, без сильного
+      размытия.; Подойдут селфи/портреты на улице и в помещении (с нормальным светом).
     category: iwd
-
   IwdDrop_02_GiantBouquetShield:
     enabled: true
     order: 2
-    label: "Огромный букет"
-    tips: "Огромный букет с драматичным студийным светом и кинематографическими тенями."
-    best_input: "Фото с одним человеком по центру, руки видны (или хотя бы частично), лицо резкое.; Букет уже в кадре или руки в позе «держу предмет» — идеальный вариант.; Нейтральный фон помогает сделать «студийный» свет убедительным."
+    label: Огромный букет
+    tips: Огромный букет с драматичным студийным светом и кинематографическими тенями.
+    best_input: Фото с одним человеком по центру, руки видны (или хотя бы частично),
+      лицо резкое.; Букет уже в кадре или руки в позе «держу предмет» — идеальный
+      вариант.; Нейтральный фон помогает сделать «студийный» свет убедительным.
     category: iwd
-
   IwdDrop_03_LovePostcardWall:
     enabled: true
     order: 3
-    label: "Стена из открыток I love you"
-    tips: "Уютная комната со стеной из открыток «I love you» на разных языках, с марками, следами помады и тёплыми гирляндами."
-    best_input: "Портрет/селфи с одним человеком, лицо самое резкое в кадре.; Фон может быть любым — он будет заменён «стеной открыток».; Лучше, если плечи/верх туловища видны: открытки будут за спиной."
+    label: Стена из открыток I love you
+    tips: Уютная комната со стеной из открыток «I love you» на разных языках, с марками,
+      следами помады и тёплыми гирляндами.
+    best_input: 'Портрет/селфи с одним человеком, лицо самое резкое в кадре.; Фон
+      может быть любым — он будет заменён «стеной открыток».; Лучше, если плечи/верх
+      туловища видны: открытки будут за спиной.'
     category: iwd
-
   IwdDrop_04_BloomLanternNight:
     enabled: true
     order: 4
-    label: "Тёплые фонарики"
-    tips: "Сумерки и тёплые фонарики сверху"
-    best_input: "Фото, где вы в центре кадра (лицо ближе к центру), хорошо видно руки или хотя бы одну руку. Портрет/сцена на улице или с нейтральным фоном — легче “превратить” в вечер с фонариками."
+    label: Тёплые фонарики
+    tips: Сумерки и тёплые фонарики сверху
+    best_input: Фото, где вы в центре кадра (лицо ближе к центру), хорошо видно руки
+      или хотя бы одну руку. Портрет/сцена на улице или с нейтральным фоном — легче
+      “превратить” в вечер с фонариками.
     category: iwd
-
   IwdDrop_05_PostcardFromParis:
     enabled: true
     order: 5
-    label: "Открытка из Парижа"
-    tips: "Стиль «открытка из Парижа»: пастельное небо, лёгкое зерно, штамп «I love you» и подпись «Wish you were here»."
-    best_input: "Портрет/селфи, где лицо по центру и хорошо видно.; Любой фон подойдёт — он будет стилизован под «Парижскую открытку».; Лучше среднее/хорошее качество, чтобы зерно выглядело «плёночным», а не шумом."
+    label: Открытка из Парижа
+    tips: 'Стиль «открытка из Парижа»: пастельное небо, лёгкое зерно, штамп «I love
+      you» и подпись «Wish you were here».'
+    best_input: Портрет/селфи, где лицо по центру и хорошо видно.; Любой фон подойдёт
+      — он будет стилизован под «Парижскую открытку».; Лучше среднее/хорошее качество,
+      чтобы зерно выглядело «плёночным», а не шумом.
     category: iwd
-
   IwdDrop_06_BloomBurstConfetti:
     enabled: true
     order: 6
-    label: "Взрыв лепестков"
-    tips: "Взрыв лепестков как конфетти-пушка: динамика, лёгкий motion blur и искристые блики, при этом лица остаются неизменными."
-    best_input: "Групповое фото до 4 человек, лица видны и достаточно резкие.; Подойдёт фото с букетом или праздничной позой — эффект «конфетти» выглядит естественнее.; Хороший свет (дневной/комнатный) помогает «искрам» и лепесткам выглядеть реалистично."
+    label: Взрыв лепестков
+    tips: 'Взрыв лепестков как конфетти-пушка: динамика, лёгкий motion blur и искристые
+      блики, при этом лица остаются неизменными.'
+    best_input: Групповое фото до 4 человек, лица видны и достаточно резкие.; Подойдёт
+      фото с букетом или праздничной позой — эффект «конфетти» выглядит естественнее.;
+      Хороший свет (дневной/комнатный) помогает «искрам» и лепесткам выглядеть реалистично.
     category: iwd
-
   IwdDrop_07_WaxSealLove:
     enabled: true
     order: 7
-    label: "Романтический конверт с печатью"
-    tips: "Романтический конверт с красной восковой печатью: сердце и надпись «I love you», тёплые блики свечей и мягкое боке."
-    best_input: "Один человек, лицо хорошо видно; идеально если руки/кисти в кадре.; Подойдёт портрет по грудь или ближе, чтобы «конверт» выглядел крупно и чётко.; Нормальный свет: так проще сделать «свечной» эффект аккуратно."
+    label: Романтический конверт с печатью
+    tips: 'Романтический конверт с красной восковой печатью: сердце и надпись «I love
+      you», тёплые блики свечей и мягкое боке.'
+    best_input: 'Один человек, лицо хорошо видно; идеально если руки/кисти в кадре.;
+      Подойдёт портрет по грудь или ближе, чтобы «конверт» выглядел крупно и чётко.;
+      Нормальный свет: так проще сделать «свечной» эффект аккуратно.'
     category: iwd
-
   IwdDrop_08_VintageFloralFilm:
     enabled: true
     order: 8
-    label: "Винтажная плёнка 70-х"
-    tips: "Винтажная плёнка 70-х: тёплые тона, мягкое зерно, лёгкие засветки и солнечные блики на цветах, лица остаются узнаваемыми."
-    best_input: "Группа до 4 человек или меньше, лица хорошо различимы.; Фото с цветами/букетом усиливает эффект «плёночной весны».; Среднее или хорошее качество: зерно будет выглядеть как плёнка, а не как шум."
+    label: Винтажная плёнка 70-х
+    tips: 'Винтажная плёнка 70-х: тёплые тона, мягкое зерно, лёгкие засветки и солнечные
+      блики на цветах, лица остаются узнаваемыми.'
+    best_input: 'Группа до 4 человек или меньше, лица хорошо различимы.; Фото с цветами/букетом
+      усиливает эффект «плёночной весны».; Среднее или хорошее качество: зерно будет
+      выглядеть как плёнка, а не как шум.'
     category: iwd
-
   IwdDrop_09_BloomHeartHalo:
     enabled: true
     order: 9
-    label: "Сердце-ореол из лепестков"
-    tips: "Сердце-ореол из лепестков вокруг головы и плеч, лёгкая блёстка и розовая подсветка по контуру, лицо сохраняется без изменений."
-    best_input: "Один человек по центру, лицо хорошо видно, верх плеч в кадре.; Букет/цветы в кадре приветствуются, но не обязательны.; Ровный свет помогает сделать «розовый контур» аккуратно."
+    label: Сердце-ореол из лепестков
+    tips: Сердце-ореол из лепестков вокруг головы и плеч, лёгкая блёстка и розовая
+      подсветка по контуру, лицо сохраняется без изменений.
+    best_input: Один человек по центру, лицо хорошо видно, верх плеч в кадре.; Букет/цветы
+      в кадре приветствуются, но не обязательны.; Ровный свет помогает сделать «розовый
+      контур» аккуратно.
     category: iwd
-
   IwdDrop_10_WomenSDay:
     enabled: true
     order: 10
-    label: "Плакат к 8 Марта"
-    tips: "Плакат к 8 Марта: графические цветы вокруг портрета, палитра крем/зелёный/коралл, надпись «International Women’s Day • 8 March» и маленькая открытка «I love you»."
-    best_input: "Портрет с чётким лицом (самое резкое в кадре), желательно по грудь/по пояс.; Нейтральный фон помогает плакатной рамке выглядеть чище, но не обязателен.; Лучше среднее/хорошее качество, чтобы типографика была идеально читаемой."
+    label: Плакат к 8 Марта
+    tips: 'Плакат к 8 Марта: графические цветы вокруг портрета, палитра крем/зелёный/коралл,
+      надпись «International Women’s Day • 8 March» и маленькая открытка «I love you».'
+    best_input: Портрет с чётким лицом (самое резкое в кадре), желательно по грудь/по
+      пояс.; Нейтральный фон помогает плакатной рамке выглядеть чище, но не обязателен.;
+      Лучше среднее/хорошее качество, чтобы типографика была идеально читаемой.
     category: iwd
-
-
-  # ── Cat drop ──
   CatDrop_01_SamuraiArmorKitty:
     enabled: true
     order: 1
-    label: "Самурай"
-    tips: ""
-    best_input: ""
+    label: Самурай
+    tips: ''
+    best_input: ''
     category: cats
-
   CatDrop_02_CottagecoreFlowerCrown:
     enabled: true
     order: 2
-    label: "Цветочный венок"
-    tips: ""
-    best_input: ""
+    label: Цветочный венок
+    tips: ''
+    best_input: ''
     category: cats
-
   CatDrop_03_PharaohGoldRegalia:
     enabled: true
     order: 3
-    label: "Фараон"
-    tips: ""
-    best_input: ""
+    label: Фараон
+    tips: ''
+    best_input: ''
     category: cats
-
   CatDrop_04_SpaceHelmetExplorer:
     enabled: true
     order: 4
-    label: "В космосе"
-    tips: ""
-    best_input: ""
+    label: В космосе
+    tips: ''
+    best_input: ''
     category: cats
-
   CatDrop_05_PunkSpikeJacket:
     enabled: true
     order: 5
-    label: "Панк"
-    tips: ""
-    best_input: ""
+    label: Панк
+    tips: ''
+    best_input: ''
     category: cats
-
   CatDrop_06_RoyalRufflePortrait:
     enabled: true
     order: 6
-    label: "Аристократ"
-    tips: ""
-    best_input: ""
+    label: Аристократ
+    tips: ''
+    best_input: ''
     category: cats
-
   CatDrop_07_KawaiiPastelHoodie:
     enabled: true
     order: 7
-    label: "Kawaii"
-    tips: ""
-    best_input: ""
+    label: Kawaii
+    tips: ''
+    best_input: ''
     category: cats
-
   CatDrop_08_NoirDetectiveTrench:
     enabled: true
     order: 8
-    label: "Нуар"
-    tips: ""
-    best_input: ""
+    label: Нуар
+    tips: ''
+    best_input: ''
     category: cats
-
   CatDrop_09_GothamNightPurr:
     enabled: true
     order: 9
-    label: "Готэм"
-    tips: ""
-    best_input: ""
+    label: Готэм
+    tips: ''
+    best_input: ''
     category: cats
-
   CatDrop_10_RumRunnerRogue:
     enabled: true
     order: 10
-    label: "Пират"
-    tips: ""
-    best_input: ""
+    label: Пират
+    tips: ''
+    best_input: ''
     category: cats
-
-
-  # ── luxurydrop ──
   Luxurydrop_01_ChampagneCalmIn:
     enabled: true
     order: 1
-    label: "Игристое на заднем сиденье"
-    tips: "Вы на заднем сиденье люксового седана ночью — мягкие огни города, приватность, спокойное лицо и лёгкий бокал. Выглядит так, будто это ваш обычный вторник."
-    best_input: "Подойдёт чёткое селфи или портрет по грудь/пояс, без сильных теней на лице и без закрывающих очков. Лучше, если лицо занимает заметную часть кадра и хорошо видно глаза."
+    label: Игристое на заднем сиденье
+    tips: Вы на заднем сиденье люксового седана ночью — мягкие огни города, приватность,
+      спокойное лицо и лёгкий бокал. Выглядит так, будто это ваш обычный вторник.
+    best_input: Подойдёт чёткое селфи или портрет по грудь/пояс, без сильных теней
+      на лице и без закрывающих очков. Лучше, если лицо занимает заметную часть кадра
+      и хорошо видно глаза.
     category: luxurydrop
-
   Luxurydrop_02_PrivateJetWindow:
     enabled: true
     order: 2
-    label: "В частном самолете"
-    tips: "Вы сидите у иллюминатора частного джета в мягком закатном/рассветном свете — спокойствие на высоте, облака внизу. В кадре главное не самолёт, а ваша дорогая тишина."
-    best_input: "Лучше всего портрет/селфи с нейтральным выражением и хорошей резкостью, без сильного наклона головы. Освещение на лице должно быть ровным, чтобы красиво легло \"золотое окно\"."
+    label: В частном самолете
+    tips: Вы сидите у иллюминатора частного джета в мягком закатном/рассветном свете
+      — спокойствие на высоте, облака внизу. В кадре главное не самолёт, а ваша дорогая
+      тишина.
+    best_input: Лучше всего портрет/селфи с нейтральным выражением и хорошей резкостью,
+      без сильного наклона головы. Освещение на лице должно быть ровным, чтобы красиво
+      легло "золотое окно".
     category: luxurydrop
-
   Luxurydrop_03_YachtDeckSoft:
     enabled: true
     order: 3
-    label: "На яхте"
-    tips: "Вы на яхте среди открытого моря — чистая палуба, светлый стиль, лёгкий ветер и спокойная улыбка. Роскошь — фоном, а в центре ваша энергия."
-    best_input: "Подойдёт фото в пол-оборота или прямо, где хорошо видны глаза и контуры лица; волосы могут быть распущены — это усилит эффект ветра. Лучше без лишних людей на фоне."
+    label: На яхте
+    tips: Вы на яхте среди открытого моря — чистая палуба, светлый стиль, лёгкий ветер
+      и спокойная улыбка. Роскошь — фоном, а в центре ваша энергия.
+    best_input: Подойдёт фото в пол-оборота или прямо, где хорошо видны глаза и контуры
+      лица; волосы могут быть распущены — это усилит эффект ветра. Лучше без лишних
+      людей на фоне.
     category: luxurydrop
-
   Luxurydrop_04_SupercarParkedNo:
     enabled: true
     order: 4
-    label: "Рядом с суперкаром"
-    tips: ""
-    best_input: "Лучше фото по пояс или в полный рост с чётким лицом; нейтральное выражение отлично подходит. Желательно без ярких логотипов на одежде."
+    label: Рядом с суперкаром
+    tips: ''
+    best_input: Лучше фото по пояс или в полный рост с чётким лицом; нейтральное выражение
+      отлично подходит. Желательно без ярких логотипов на одежде.
     category: luxurydrop
-
   Luxurydrop_05_MonacoMarinaMorning:
     enabled: true
     order: 5
-    label: "Прогулка по марине в Монако"
-    tips: "Вы гуляете по утренней марине на рассвете с кофе — пастельное небо, яхты на фоне в мягком блюре. В центре кадра ваша спокойная энергия."
-    best_input: "Подойдёт портрет или фото по пояс, где лицо чёткое и без сильных пересветов. Если исходник со спокойным выражением — получится максимально \"утренний вайб\"."
+    label: Прогулка по марине в Монако
+    tips: Вы гуляете по утренней марине на рассвете с кофе — пастельное небо, яхты
+      на фоне в мягком блюре. В центре кадра ваша спокойная энергия.
+    best_input: Подойдёт портрет или фото по пояс, где лицо чёткое и без сильных пересветов.
+      Если исходник со спокойным выражением — получится максимально "утренний вайб".
     category: luxurydrop
-
   Luxurydrop_06_PenthouseWindowSilence:
     enabled: true
     order: 6
-    label: "В пентхаусе"
-    tips: "Вы в пентхаусе у огромного окна на фоне вечернего города — минимализм, чистые линии, мягкий контровый свет."
-    best_input: "Лучше портрет с хорошей детализацией лица, без резких теней от лампы сверху. Подойдут фото с нейтральным выражением и спокойной позой."
+    label: В пентхаусе
+    tips: Вы в пентхаусе у огромного окна на фоне вечернего города — минимализм, чистые
+      линии, мягкий контровый свет.
+    best_input: Лучше портрет с хорошей детализацией лица, без резких теней от лампы
+      сверху. Подойдут фото с нейтральным выражением и спокойной позой.
     category: luxurydrop
-
   Luxurydrop_07_SkiChaletApr:
     enabled: true
     order: 7
-    label: "У тёплого шале"
-    tips: "Вы у тёплого шале под лёгким снегом — уютные огни, зимняя одежда и спокойный взгляд."
-    best_input: "Подойдёт селфи или портрет с открытым лицом (без маски/очков), чтобы снег не \"съел\" черты. Лучше нейтральное освещение на исходнике."
+    label: У тёплого шале
+    tips: Вы у тёплого шале под лёгким снегом — уютные огни, зимняя одежда и спокойный
+      взгляд.
+    best_input: Подойдёт селфи или портрет с открытым лицом (без маски/очков), чтобы
+      снег не "съел" черты. Лучше нейтральное освещение на исходнике.
     category: luxurydrop
-
   Luxurydrop_08_HelicopterOverThe:
     enabled: true
     order: 8
-    label: "В вертолёте"
-    tips: "Вы в вертолёте над побережьем — море и берег внизу, внутри лаконично, на лице спокойствие."
-    best_input: "Лучше фото с чётким лицом и открытыми ушами/волосами, чтобы гарнитура (если появится) выглядела естественно. Подойдёт спокойное выражение без сильной мимики."
+    label: В вертолёте
+    tips: Вы в вертолёте над побережьем — море и берег внизу, внутри лаконично, на
+      лице спокойствие.
+    best_input: Лучше фото с чётким лицом и открытыми ушами/волосами, чтобы гарнитура
+      (если появится) выглядела естественно. Подойдёт спокойное выражение без сильной
+      мимики.
     category: luxurydrop
-
   Luxurydrop_09_LuxuryHobbyPolo:
     enabled: true
     order: 9
-    label: "На поле для поло"
-    tips: ""
-    best_input: "Подойдёт портрет или фото по пояс, где хорошо видно глаза и форму лица — это важно для узнаваемости. Лучше без сильного бокового света, чтобы \"полированная\" укладка выглядела естественно."
+    label: На поле для поло
+    tips: ''
+    best_input: Подойдёт портрет или фото по пояс, где хорошо видно глаза и форму
+      лица — это важно для узнаваемости. Лучше без сильного бокового света, чтобы
+      "полированная" укладка выглядела естественно.
     category: luxurydrop
-
   Luxurydrop_10_InfinityPoolSunset:
     enabled: true
     order: 10
-    label: "В инфинити-бассейне"
-    tips: "Вы в инфинити-бассейне на закате над океаном — тёплый свет, лёгкий блеск воды и ощущение \"я ушёл от стресса\"."
-    best_input: "Лучше портрет/селфи с чётким лицом и открытым подбородком, без закрывающих очков. Подойдёт фото с нейтральным спокойным выражением."
+    label: В инфинити-бассейне
+    tips: Вы в инфинити-бассейне на закате над океаном — тёплый свет, лёгкий блеск
+      воды и ощущение "я ушёл от стресса".
+    best_input: Лучше портрет/селфи с чётким лицом и открытым подбородком, без закрывающих
+      очков. Подойдёт фото с нейтральным спокойным выражением.
     category: luxurydrop
-
-
-# ── TEMPLATES ─────────────────────────────────────────────────────────────────
-#
-# NEW EFFECT:
-#
-# new_effect:
-#   enabled: true
-#   order: 10
-#   label: "🎨 Display Name"
-#   tips: |
-#     📸 Рекомендации:
-#     • Tip 1
-#   best_input: "Close-up selfie with clear face"  # optional - leave blank or omit if not needed
-#   category: style        # omit for top-level
-#
-# Then create: prompts/new_effect.txt
-# Optionally:  images/new_effect.jpg
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# NEW CATEGORY:
-#
-# categories:
-#   my_category:
-#     enabled: true
-#     order: 3
-#     label: "🎭 My Category"
-#     parent:                  # ← omit or leave blank for top-level,
-#                              #    set to parent id for subcategory
-#
-# Then assign effects to it: category: my_category

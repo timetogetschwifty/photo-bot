@@ -74,6 +74,8 @@ Avoid prompt wording that commonly triggers Gemini safety blocks.
 - Deployment config & Railway setup: `docs/RAILWAY_CONFIG.md`
 - Pricing, packages, payments: `docs/PRICING.md`
 - Secrets and repository hygiene: `docs/SECURITY.md`
+- User-facing flow, copy, states, navigation: `docs/UI_FLOW_v3.md`
+
 
 ## Security Baseline
 
