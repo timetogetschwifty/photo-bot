@@ -18,86 +18,113 @@ categories:
 effects:
   lucky:
     enabled: true
-    order: 0
+    order: 1
     label: 🎲 Попробуй свой PROMPT 🔥
     tips: "Отправь своё фото и опиши что хочешь с ним сделать — AI исполнит."
     best_input: ""
     category: null
     type: free_prompt
+  
+  8march2Watercolor_portrait:
+    enabled: true
+    order: 2
+    label: 💌 Открытка на 8 марта для двоих 🔥
+    tips: 'Превращает групповое фото в нежную акварельную открытку с тюлпаными'
+    best_input: 'Групповое фото из двух человек где хорошо видно лица. Фон желательно простой и светлый'
+    category: null
+  
+  8march2Watercolor_Tulip:
+    enabled: true
+    order: 3
+    label: 💌 Открытка на 8 марта 🔥
+    tips: 'Ты превращаешься в нежную акварельную открытку с тюльпанами в руках'
+    best_input: 'Фото где хорошо видно лицо. Фон желательно простой и светлый'
+    category: null  
+
   Custom0218_03_ActionFigureBlister:
     enabled: true
-    order: 1
-    label: 🪆 Экшн-фигурка в упаковке 🔥
+    order: 4
+    label: 🪆 Экшн-фигурка в упаковке
     tips: 'Вы в блистерной упаковке как экшен-фигурка: "starter pack" и аксессуары
       (кружка, ноутбук, наушники и т.д.).'
     best_input: ''
     category: null
-  Custom0218_04_BabkaCat:
-    enabled: true
-    order: 2
-    label: 😺 Бабушка кот 🔥
-    tips: Покажи это своему коту, а лучше кошке
-    best_input: ''
-    category: null
+
   cat_phone:
     enabled: true
-    order: 3
+    order: 5
     label: 🐱 Котик вместо телефона
     tips: Преврати телефон в руке в милого котика
     best_input: Photo holding a phone in your hand
     category: null
+
   king:
     enabled: true
-    order: 4
+    order: 6
     label: 👑 Ваше Величество
     tips: ''
     best_input: ''
     category: null
+
   ny_hobo:
     enabled: true
-    order: 5
+    order: 7
     label: 🗽 Переехал в Нью Йорк
     tips: 'И что-то пошло не так
 
       '
     best_input: ''
     category: null
+
   fashion_week:
     enabled: true
-    order: 6
+    order: 8
     label: 🗼 Неделя моды
     tips: 'Для нее
 
       '
     best_input: ''
     category: null
+
   proposal:
     enabled: true
-    order: 7
+    order: 9
     label: 💍 В париже
     tips: 'Для нее
 
       '
     best_input: ''
     category: null
+
   premier:
     enabled: true
-    order: 8
+    order: 10
     label: 📸 Заскочили на премьеру
     tips: 'Для нее и для него
 
       '
     best_input: ''
     category: null
+
   director:
     enabled: true
-    order: 9
+    order: 11
     label: 🎬 Камера, мотор...!
     tips: '9-й сезон 2137 серия
 
       '
     best_input: ''
     category: null
+
+  Custom0218_04_BabkaCat:
+    enabled: false
+    order: 12
+    label: 😺 Бабушка кот
+    tips: Покажи это своему коту, а лучше кошке
+    best_input: ''
+    category: null
+
+
   AvatarDrop_01_LinkedinHeadshot:
     enabled: true
     order: 1
@@ -106,6 +133,7 @@ effects:
       фоне.
     best_input: Portrait photo with neutral expression, shoulders visible
     category: avatar
+
   AvatarDrop_02_TinderGlowUp:
     enabled: true
     order: 2
@@ -114,6 +142,7 @@ effects:
       без потери реализма.
     best_input: ''
     category: avatar
+
   AvatarDrop_03_TelegramPfpClean:
     enabled: true
     order: 3
@@ -122,6 +151,7 @@ effects:
       в маленьком размере.'
     best_input: ''
     category: avatar
+
   AvatarDrop_04_InstagramStoryPortrait:
     enabled: true
     order: 4
@@ -130,6 +160,7 @@ effects:
       виньеткой.
     best_input: ''
     category: avatar
+
   AvatarDrop_05_WhatsappFriendly:
     enabled: true
     order: 5
@@ -138,6 +169,7 @@ effects:
       фон.'
     best_input: ''
     category: avatar
+
   AvatarDrop_06_DiscordGamerIcon:
     enabled: true
     order: 6
@@ -146,6 +178,7 @@ effects:
       фон, лицо без изменений.'
     best_input: ''
     category: avatar
+
   AvatarDrop_07_CvPassportStyle:
     enabled: true
     order: 7
@@ -154,6 +187,7 @@ effects:
       фон, правильный кадр.'
     best_input: ''
     category: avatar
+
   AvatarDrop_08_AppleContactPoster:
     enabled: true
     order: 8
@@ -162,6 +196,7 @@ effects:
       и лицо в центре.'
     best_input: ''
     category: avatar
+
   AvatarDrop_09_BusinessCardPortrait:
     enabled: true
     order: 9
@@ -170,6 +205,7 @@ effects:
       будущий текст.'
     best_input: ''
     category: avatar
+
   AvatarDrop_10_MassagerBrandPfp:
     enabled: true
     order: 10
@@ -178,6 +214,7 @@ effects:
       образ без откровенности.'
     best_input: ''
     category: avatar
+
   IwdDrop_01_IwdFloralCrown:
     enabled: true
     order: 1
@@ -187,6 +224,7 @@ effects:
     best_input: Один человек по центру или крупным планом, лицо чёткое, без сильного
       размытия.; Подойдут селфи/портреты на улице и в помещении (с нормальным светом).
     category: iwd
+
   IwdDrop_02_GiantBouquetShield:
     enabled: true
     order: 2
@@ -196,6 +234,7 @@ effects:
       лицо резкое.; Букет уже в кадре или руки в позе «держу предмет» — идеальный
       вариант.; Нейтральный фон помогает сделать «студийный» свет убедительным.
     category: iwd
+
   IwdDrop_03_LovePostcardWall:
     enabled: true
     order: 3
@@ -206,6 +245,7 @@ effects:
       может быть любым — он будет заменён «стеной открыток».; Лучше, если плечи/верх
       туловища видны: открытки будут за спиной.'
     category: iwd
+
   IwdDrop_04_BloomLanternNight:
     enabled: true
     order: 4
@@ -215,6 +255,7 @@ effects:
       или хотя бы одну руку. Портрет/сцена на улице или с нейтральным фоном — легче
       “превратить” в вечер с фонариками.
     category: iwd
+
   IwdDrop_05_PostcardFromParis:
     enabled: true
     order: 5
@@ -225,6 +266,7 @@ effects:
       — он будет стилизован под «Парижскую открытку».; Лучше среднее/хорошее качество,
       чтобы зерно выглядело «плёночным», а не шумом.
     category: iwd
+
   IwdDrop_06_BloomBurstConfetti:
     enabled: true
     order: 6
@@ -235,6 +277,7 @@ effects:
       фото с букетом или праздничной позой — эффект «конфетти» выглядит естественнее.;
       Хороший свет (дневной/комнатный) помогает «искрам» и лепесткам выглядеть реалистично.
     category: iwd
+
   IwdDrop_07_WaxSealLove:
     enabled: true
     order: 7
@@ -245,6 +288,7 @@ effects:
       Подойдёт портрет по грудь или ближе, чтобы «конверт» выглядел крупно и чётко.;
       Нормальный свет: так проще сделать «свечной» эффект аккуратно.'
     category: iwd
+
   IwdDrop_08_VintageFloralFilm:
     enabled: true
     order: 8
@@ -255,6 +299,7 @@ effects:
       усиливает эффект «плёночной весны».; Среднее или хорошее качество: зерно будет
       выглядеть как плёнка, а не как шум.'
     category: iwd
+
   IwdDrop_09_BloomHeartHalo:
     enabled: true
     order: 9
@@ -265,6 +310,7 @@ effects:
       в кадре приветствуются, но не обязательны.; Ровный свет помогает сделать «розовый
       контур» аккуратно.
     category: iwd
+
   IwdDrop_10_WomenSDay:
     enabled: true
     order: 10
@@ -275,6 +321,7 @@ effects:
       пояс.; Нейтральный фон помогает плакатной рамке выглядеть чище, но не обязателен.;
       Лучше среднее/хорошее качество, чтобы типографика была идеально читаемой.
     category: iwd
+
   CatDrop_01_SamuraiArmorKitty:
     enabled: true
     order: 1
@@ -282,6 +329,7 @@ effects:
     tips: ''
     best_input: ''
     category: cats
+
   CatDrop_02_CottagecoreFlowerCrown:
     enabled: true
     order: 2
@@ -289,6 +337,7 @@ effects:
     tips: ''
     best_input: ''
     category: cats
+
   CatDrop_03_PharaohGoldRegalia:
     enabled: true
     order: 3
@@ -296,6 +345,7 @@ effects:
     tips: ''
     best_input: ''
     category: cats
+
   CatDrop_04_SpaceHelmetExplorer:
     enabled: true
     order: 4
@@ -303,6 +353,7 @@ effects:
     tips: ''
     best_input: ''
     category: cats
+
   CatDrop_05_PunkSpikeJacket:
     enabled: true
     order: 5
@@ -310,6 +361,7 @@ effects:
     tips: ''
     best_input: ''
     category: cats
+
   CatDrop_06_RoyalRufflePortrait:
     enabled: true
     order: 6
@@ -317,6 +369,7 @@ effects:
     tips: ''
     best_input: ''
     category: cats
+
   CatDrop_07_KawaiiPastelHoodie:
     enabled: true
     order: 7
@@ -324,6 +377,7 @@ effects:
     tips: ''
     best_input: ''
     category: cats
+
   CatDrop_08_NoirDetectiveTrench:
     enabled: true
     order: 8
@@ -331,6 +385,7 @@ effects:
     tips: ''
     best_input: ''
     category: cats
+
   CatDrop_09_GothamNightPurr:
     enabled: true
     order: 9
@@ -338,6 +393,7 @@ effects:
     tips: ''
     best_input: ''
     category: cats
+
   CatDrop_10_RumRunnerRogue:
     enabled: true
     order: 10
@@ -345,6 +401,7 @@ effects:
     tips: ''
     best_input: ''
     category: cats
+
   Luxurydrop_01_ChampagneCalmIn:
     enabled: true
     order: 1
@@ -355,6 +412,7 @@ effects:
       на лице и без закрывающих очков. Лучше, если лицо занимает заметную часть кадра
       и хорошо видно глаза.
     category: luxurydrop
+
   Luxurydrop_02_PrivateJetWindow:
     enabled: true
     order: 2
@@ -366,6 +424,7 @@ effects:
       без сильного наклона головы. Освещение на лице должно быть ровным, чтобы красиво
       легло "золотое окно".
     category: luxurydrop
+
   Luxurydrop_03_YachtDeckSoft:
     enabled: true
     order: 3
@@ -376,6 +435,7 @@ effects:
       лица; волосы могут быть распущены — это усилит эффект ветра. Лучше без лишних
       людей на фоне.
     category: luxurydrop
+
   Luxurydrop_04_SupercarParkedNo:
     enabled: true
     order: 4
@@ -384,6 +444,7 @@ effects:
     best_input: Лучше фото по пояс или в полный рост с чётким лицом; нейтральное выражение
       отлично подходит. Желательно без ярких логотипов на одежде.
     category: luxurydrop
+
   Luxurydrop_05_MonacoMarinaMorning:
     enabled: true
     order: 5
@@ -393,6 +454,7 @@ effects:
     best_input: Подойдёт портрет или фото по пояс, где лицо чёткое и без сильных пересветов.
       Если исходник со спокойным выражением — получится максимально "утренний вайб".
     category: luxurydrop
+
   Luxurydrop_06_PenthouseWindowSilence:
     enabled: true
     order: 6
@@ -402,6 +464,7 @@ effects:
     best_input: Лучше портрет с хорошей детализацией лица, без резких теней от лампы
       сверху. Подойдут фото с нейтральным выражением и спокойной позой.
     category: luxurydrop
+
   Luxurydrop_07_SkiChaletApr:
     enabled: true
     order: 7
@@ -411,6 +474,7 @@ effects:
     best_input: Подойдёт селфи или портрет с открытым лицом (без маски/очков), чтобы
       снег не "съел" черты. Лучше нейтральное освещение на исходнике.
     category: luxurydrop
+
   Luxurydrop_08_HelicopterOverThe:
     enabled: true
     order: 8
@@ -421,6 +485,7 @@ effects:
       (если появится) выглядела естественно. Подойдёт спокойное выражение без сильной
       мимики.
     category: luxurydrop
+
   Luxurydrop_09_LuxuryHobbyPolo:
     enabled: true
     order: 9
@@ -430,6 +495,7 @@ effects:
       лица — это важно для узнаваемости. Лучше без сильного бокового света, чтобы
       "полированная" укладка выглядела естественно.
     category: luxurydrop
+
   Luxurydrop_10_InfinityPoolSunset:
     enabled: true
     order: 10
@@ -439,3 +505,4 @@ effects:
     best_input: Лучше портрет/селфи с чётким лицом и открытым подбородком, без закрывающих
       очков. Подойдёт фото с нейтральным спокойным выражением.
     category: luxurydrop
+
