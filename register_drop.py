@@ -188,6 +188,31 @@ def find_drop_files(folder, folder_label):
     return files
 
 
+def validate_drop_names(ideas, drop_files, folder_label):
+    """Cross-check expected effect_ids (from ideas) vs actual file base names.
+
+    Returns (ok: bool, report: list[str]) where report lists mismatches.
+    """
+    expected = {build_effect_id(n, folder_label, name) for n, name, _, _ in ideas}
+    actual = set(drop_files.keys())
+
+    missing_from_folder = sorted(expected - actual)
+    unexpected_in_folder = sorted(actual - expected)
+
+    report = []
+    if missing_from_folder:
+        report.append("Expected but NOT found:")
+        for name in missing_from_folder:
+            report.append(f"  x  {name}")
+    if unexpected_in_folder:
+        report.append("Found but NOT expected (name mismatch?):")
+        for name in unexpected_in_folder:
+            report.append(f"  ?  {name}")
+
+    ok = not missing_from_folder and not unexpected_in_folder
+    return ok, report
+
+
 def main():
     parser = argparse.ArgumentParser(description="Register drop effects into effects.yaml")
     parser.add_argument("ideas_file", help="Path to the original ideas txt file")
@@ -221,6 +246,16 @@ def main():
 
     # Find existing drop files
     drop_files = find_drop_files(folder, folder_label)
+
+    # Pre-flight: verify file names match expected effect_ids from ideas file
+    ok, report = validate_drop_names(ideas, drop_files, folder_label)
+    if not ok:
+        print(f"Name mismatch in {os.path.basename(folder)}/:")
+        for line in report:
+            print(line)
+        sys.exit(1)
+    print(f"  File names verified ({len(ideas)} effects match ideas file)")
+    print()
 
     # Load current effects.yaml
     with open(EFFECTS_YAML, "r", encoding="utf-8") as f:
@@ -331,11 +366,14 @@ def main():
                 f"    order: {cat_order}\n"
                 f'    label: "{folder_name}"\n'
             )
-            # Insert before "# ── Effects" line
+            # Insert before "# ── Effects" marker, or before "effects:" as fallback
             effects_marker = "# ── Effects"
             if effects_marker in content:
                 pos = content.index(effects_marker)
                 content = content[:pos] + cat_block + "\n" + content[pos:]
+            else:
+                pos = content.index("\neffects:")
+                content = content[:pos] + cat_block + content[pos:]
             print(f"  Created category: {category} (enabled: false — enable manually)")
 
     # Copy files and build YAML block
