@@ -7,6 +7,7 @@ Features: credit system, promo codes, referrals, package purchases via YooMoney.
 
 import os
 import io
+import re
 import json
 import logging
 import warnings
@@ -176,7 +177,8 @@ PROMO_AMOUNTS = [10, 25, 50, 100]
     ADMIN_EFFECTS_REPORT,
     ADMIN_BROADCAST,
     WAITING_LUCKY_PROMPT,
-) = range(16)
+    ADMIN_SOURCE_INPUT,
+) = range(17)
 
 # ── Gemini client ────────────────────────────────────────────────────────────
 
@@ -431,8 +433,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     auto_browse = False
     acquisition_source = None
 
-    KNOWN_SOURCES = {"src_vk": "vk", "src_instagram": "instagram", "src_tiktok": "tiktok"}
-
     if args:
         param = args[0]
         # Referral link: /start ref_123456
@@ -446,9 +446,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         # Browse deep link: /start browse
         elif param == "browse":
             auto_browse = True
-        # Source tracking: /start src_vk, src_instagram, src_tiktok
-        elif param in KNOWN_SOURCES:
-            acquisition_source = KNOWN_SOURCES[param]
+        # Source tracking: /start src_<name>
+        elif param.startswith("src_"):
+            acquisition_source = param[4:]
 
     # Get or create user
     db_user, is_new = db.get_or_create_user(
@@ -1499,6 +1499,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             [InlineKeyboardButton("🎁 Подарочный промокод", callback_data="admin_promo")],
             [InlineKeyboardButton("🎟 Массовый промокод", callback_data="admin_bulk_promo")],
             [InlineKeyboardButton("📢 Рассылка новых эффектов", callback_data="admin_broadcast")],
+            [InlineKeyboardButton("🔗 Source Links", callback_data="admin_source_links")],
             [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
         ]),
     )
@@ -1695,6 +1696,60 @@ async def admin_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             [InlineKeyboardButton("🎁 Подарочный промокод", callback_data="admin_promo")],
             [InlineKeyboardButton("🎟 Массовый промокод", callback_data="admin_bulk_promo")],
             [InlineKeyboardButton("📢 Рассылка новых эффектов", callback_data="admin_broadcast")],
+            [InlineKeyboardButton("🔗 Source Links", callback_data="admin_source_links")],
+            [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
+        ]),
+    )
+    return ADMIN_MENU
+
+
+async def show_admin_source_links(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show list of source tracking links."""
+    query = update.callback_query
+    await query.answer()
+    names = db.get_source_links()
+    if names:
+        lines = "\n".join(f"• https://t.me/{BOT_USERNAME}?start=src_{n}" for n in names)
+    else:
+        lines = "No source links yet."
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("➕ Create new", callback_data="admin_source_create")],
+        [InlineKeyboardButton("⬅️ Back", callback_data="admin_back")],
+    ])
+    await query.edit_message_text(f"🔗 Source Links\n\n{lines}", reply_markup=keyboard)
+    return ADMIN_MENU
+
+
+async def show_admin_source_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Prompt admin to enter a source name."""
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text("Enter source name (letters/digits only, e.g. TG):")
+    return ADMIN_SOURCE_INPUT
+
+
+async def handle_admin_source_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Save new source link and show the generated URL."""
+    name = update.message.text.strip()
+    if not re.match(r'^[A-Za-z0-9]{1,32}$', name):
+        await update.message.reply_text("Invalid name. Use ASCII letters and digits only, max 32 chars:")
+        return ADMIN_SOURCE_INPUT
+    created = db.create_source_link(name)
+    if created:
+        link = f"https://t.me/{BOT_USERNAME}?start=src_{name}"
+        await update.message.reply_text(f"Created:\n{link}")
+    else:
+        await update.message.reply_text(f"Source '{name}' already exists.")
+    await update.message.reply_text(
+        "🔐 Админ-панель",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
+            [InlineKeyboardButton("📈 Weekly Report", callback_data="admin_report")],
+            [InlineKeyboardButton("🗂 Raw Data", callback_data="admin_effects_report")],
+            [InlineKeyboardButton("🎁 Подарочный промокод", callback_data="admin_promo")],
+            [InlineKeyboardButton("🎟 Массовый промокод", callback_data="admin_bulk_promo")],
+            [InlineKeyboardButton("📢 Рассылка новых эффектов", callback_data="admin_broadcast")],
+            [InlineKeyboardButton("🔗 Source Links", callback_data="admin_source_links")],
             [InlineKeyboardButton("🏠 Выход", callback_data="back_to_main")],
         ]),
     )
@@ -2053,6 +2108,8 @@ def main() -> None:
                 CallbackQueryHandler(show_admin_promo, pattern="^admin_promo$"),
                 CallbackQueryHandler(show_admin_bulk_promo, pattern="^admin_bulk_promo$"),
                 CallbackQueryHandler(show_admin_broadcast, pattern="^admin_broadcast$"),
+                CallbackQueryHandler(show_admin_source_links, pattern="^admin_source_links$"),
+                CallbackQueryHandler(show_admin_source_input, pattern="^admin_source_create$"),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
                 CallbackQueryHandler(show_main_menu, pattern="^back_to_main$"),
             ],
@@ -2083,6 +2140,10 @@ def main() -> None:
             ],
             ADMIN_BROADCAST: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_broadcast),
+                CallbackQueryHandler(admin_back, pattern="^admin_back$"),
+            ],
+            ADMIN_SOURCE_INPUT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_source_name),
                 CallbackQueryHandler(admin_back, pattern="^admin_back$"),
             ],
         },

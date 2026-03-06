@@ -29,3 +29,19 @@
 | E4 | First Effect (new users) | What do new users try first — and is it a strong first impression? | most used effect on first-ever generation | What new users try first | Weak effect here → swap with a stronger one |
 | E5 | Effect Repeat Rate | Do users come back to this effect or try it once and move on? | total generations of effect X / unique users who used effect X | Depth of engagement per effect | Low → effect is one-time curiosity, improve or cut |
 | E6 | Effect Retention Signal | Does using this effect make users come back next week? | users who used effect X in week N with >=1 generation in week N+1 / users who used effect X in week N | Which effects create habit | Low → effect is a dead end, not building return behavior |
+
+---
+
+## Referral & Acquisition Analysis (Weekly)
+
+Source buckets: **referral** = `referred_by IS NOT NULL`; **vk / instagram / tiktok** = `acquisition_source`; **organic** = both NULL.
+
+| # | Metric | Question it answers | Formula | Why it matters | Actions |
+|---|--------|---------------------|---------|----------------|---------|
+| R1 | New Users by Source (7d) | Where are new users actually coming from this week? | new users grouped by source bucket | Shows which channels drive volume | Dead channel → cut or rethink; growing channel → invest more |
+| R2 | Referral Share (7d) | What % of new users came via a referral link? | users with `referred_by` set (7d) / total new users (7d) | How much growth is word-of-mouth | Low → improve referral incentive or visibility |
+| R3 | Referral vs Organic Activation Rate | Do referred users generate within 24h more than organic users? | activation rate (gen within 24h) for referred cohort vs organic cohort | Referrals carry warmer intent — gap shows real quality difference | Big gap → referred users are primed; optimize onboarding for organic to close it |
+| R4 | Referral Bonus Credit Rate | What % of referred users actually triggered the referral bonus? | users with `referred_by` set AND `referral_credited = 1` / total users with `referred_by` set | Shows if the referral loop is closing or if referred users bounce before generating | Low → referred users aren't activating; strengthen first-gen nudge |
+| R5 | Top Referrers (7d) | Which users sent the most new referrals this week? | COUNT new users per `referred_by` value, top 5, this week | Identifies power referrers worth rewarding | High-volume referrer → bonus credits, ambassador treatment |
+| R6 | Referral vs Organic Week-1 Payment Rate | Do referred users pay at a higher rate in their first week than organic? | users (signed up 14–7d ago, referred) with >=1 purchase in days 1–7 / referred cohort vs same for organic cohort | Referrals may bring higher- or lower-quality payers | Gap → adjust monetization nudges per source |
+| R7 | Revenue (7d) by Source | Which acquisition channel actually generates money? | SUM(`price_rub`) from purchases (7d), joined to users, grouped by source bucket | Volume from a channel means nothing if it doesn't pay | High users, low revenue → channel brings freeloaders; high revenue → double down |

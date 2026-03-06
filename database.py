@@ -138,6 +138,16 @@ def init_db() -> None:
         )
     """)
 
+    # Source links table (tracks acquisition tracking links created via admin)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS source_links (
+            name TEXT PRIMARY KEY,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    for _name in ("vk", "instagram", "tiktok"):
+        cursor.execute("INSERT OR IGNORE INTO source_links (name) VALUES (?)", (_name,))
+
     # Create indexes for notification_log
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_notif_user
@@ -774,6 +784,30 @@ def get_user_referral_count(telegram_id: int) -> int:
     count = cursor.fetchone()[0]
     conn.close()
     return count
+
+
+def create_source_link(name: str) -> bool:
+    """Create a new source link. Returns False if name already exists."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO source_links (name) VALUES (?)", (name,))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        conn.close()
+
+
+def get_source_links() -> list[str]:
+    """Return all source link names ordered by created_at."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM source_links ORDER BY created_at")
+    names = [row["name"] for row in cursor.fetchall()]
+    conn.close()
+    return names
 
 
 # Initialize database on import
